@@ -24,8 +24,6 @@ Includes:
 
 Perfect blend of biomechanics, robotics, and control theory.
 
----
-
 ## Features
 
 - **Closed-loop feedback** using EMG data and force modulation
@@ -34,8 +32,6 @@ Perfect blend of biomechanics, robotics, and control theory.
 - **GUI** for user-specified exertion levels (e.g., 60% MVC)
 - **Hybrid force-position control** with compliance and stability focus
 - **Controller benchmarking** based on performance and robustness
-
----
 
 ## Architecture
 
@@ -49,13 +45,9 @@ Perfect blend of biomechanics, robotics, and control theory.
     [ Force Output ] ←── Feedback Loop ──→ [ EMG Activation ]
 ```
 
----
-
 ## Demo
 
 Coming soon: Video of the system in action!
-
----
 
 ## Installation
 
@@ -74,8 +66,6 @@ pip install -r requirements.txt
 
 Ensure that MuJoCo and OpenSim Python bindings are installed correctly.
 
----
-
 <!-- ## Project Structure
 
 ```
@@ -89,8 +79,6 @@ flexiforce/
 └── README.md
 ``` -->
 
----
-
 ## Authors
 
 - Ben Forbes  
@@ -99,13 +87,9 @@ flexiforce/
 
 Course project for **MAE 263C** – University of California, Los Angeles
 
----
-
 ## License
 
 MIT License. See `LICENSE.md` for details.
-
----
 
 ## Acknowledgments
 
