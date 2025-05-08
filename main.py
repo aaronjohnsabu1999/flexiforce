@@ -13,7 +13,7 @@ from controller import ParallelForceMotionController
 z_force = 0.5
 
 # Step 2: Load model and controller
-model = mujoco.MjModel.from_xml_path("model_files/franka_fr3/fr3.xml")
+model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_fr3/fr3.xml")
 data = mujoco.MjData(model)
 controller = ParallelForceMotionController(model, data, site_name="attachment_site")
 gui = ForceControlGUI()

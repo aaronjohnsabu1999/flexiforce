@@ -53,7 +53,7 @@ Coming soon: Video of the system in action!
 
 ```bash
 # Clone the repo
-git clone https://github.com/aaronjohnsabu1999/flexiforce.git
+git clone --recurse-submodules https://github.com/aaronjohnsabu1999/flexiforce.git
 cd flexiforce
 
 # (Optional) Create a virtual environment
