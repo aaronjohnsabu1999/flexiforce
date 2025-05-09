@@ -13,7 +13,8 @@ z_force = 0.5
 # Step 2: Load model and controller
 model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_fr3/fr3.xml")
 data = mujoco.MjData(model)
-M, B, K, Kp, Kd = ...
+M,B,K=1.0,50.0,0.0
+Kp,Kd=2000.0,50.0
 # controller = ParallelForceMotionController(model, data, site_name="attachment_site")
 controller = AdmittanceController(
     model, data, site_name="attachment_site", M=M, B=B, K=K, Kp=Kp, Kd=Kd
@@ -37,7 +38,7 @@ start_time = time.time()
 with mujoco.viewer.launch_passive(model, data) as viewer:
     while viewer.is_running():
         z_force = gui.get_force()
-        controller.set_force_z(z_force)
+        controller.set_external_force([0.0, 0.0, z_force])
 
         tau, F = controller.compute_torques(x_goal)
         data.ctrl[:] = tau
