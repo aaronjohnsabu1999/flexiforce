@@ -6,25 +6,27 @@ import time
 import matplotlib.pyplot as plt
 from gui import ForceControlGUI
 
-
-
-from controller import ParallelForceMotionController
+from controller import ParallelForceMotionController, AdmittanceController
 
 z_force = 0.5
 
 # Step 2: Load model and controller
 model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_fr3/fr3.xml")
 data = mujoco.MjData(model)
-controller = ParallelForceMotionController(model, data, site_name="attachment_site")
+M, B, K, Kp, Kd = ...
+# controller = ParallelForceMotionController(model, data, site_name="attachment_site")
+controller = AdmittanceController(
+    model, data, site_name="attachment_site", M=M, B=B, K=K, Kp=Kp, Kd=Kd
+)
 gui = ForceControlGUI()
 
 # Step 3: Set goal pose - straight line down at x = 0.5 m from base
 mujoco.mj_forward(model, data)
 x_curr = data.site_xpos[controller.site_id].copy()
 x_goal = x_curr.copy()
-x_goal[0] = 0.5     # Set x to 0.5 m in front of base
-x_goal[1] = 0.0     # Centered on y
-x_goal[2] -= 1.0    # 10 cm downward
+x_goal[0] = 0.5  # Set x to 0.5 m in front of base
+x_goal[1] = 0.0  # Centered on y
+x_goal[2] -= 1.0  # 10 cm downward
 
 
 # Step 4: Setup data logging
@@ -53,4 +55,3 @@ plt.subplot(2, 1, 1)
 plt.plot(time_log, force_log, label="Z Force [N]")
 plt.ylabel("Z Force (N)")
 plt.grid()
-

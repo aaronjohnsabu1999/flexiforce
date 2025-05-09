@@ -1,5 +1,6 @@
 import matplotlib
-matplotlib.use('TkAgg')  # Linux-friendly, minimal dependencies
+
+matplotlib.use("TkAgg")  # Linux-friendly, minimal dependencies
 
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
@@ -7,23 +8,30 @@ from matplotlib.widgets import Slider
 from threading import Thread
 import time
 
+
 class ForceControlGUI:
     def __init__(self, init_force=-5.0):
         self.force_z = init_force
         self._running = True
 
-        self.fig, (self.ax_slider, self.ax_force, self.ax_vel) = plt.subplots(3, 1, figsize=(6, 6))
+        self.fig, (self.ax_slider, self.ax_force, self.ax_vel) = plt.subplots(
+            3, 1, figsize=(6, 6)
+        )
         plt.subplots_adjust(hspace=0.6)
 
         # Force slider
         self.slider_ax = self.fig.add_axes([0.2, 0.88, 0.6, 0.03])
-        self.slider = Slider(self.slider_ax, 'Z Force (N)', -20.0, 0.0, valinit=self.force_z)
+        self.slider = Slider(
+            self.slider_ax, "Z Force (N)", -20.0, 0.0, valinit=self.force_z
+        )
         self.slider.on_changed(self._on_slider_change)
 
         # Force and velocity plots
         self.force_vals, self.vel_vals, self.time_vals = [], [], []
-        self.force_line, = self.ax_force.plot([], [], label="Z Force [N]")
-        self.vel_line, = self.ax_vel.plot([], [], label="Max Joint Vel [rad/s]", color='orange')
+        (self.force_line,) = self.ax_force.plot([], [], label="Z Force [N]")
+        (self.vel_line,) = self.ax_vel.plot(
+            [], [], label="Max Joint Vel [rad/s]", color="orange"
+        )
 
         self.ax_force.set_ylabel("Z Force [N]")
         self.ax_force.legend()
@@ -55,8 +63,10 @@ class ForceControlGUI:
                 self.force_line.set_data(self.time_vals, self.force_vals)
                 self.vel_line.set_data(self.time_vals, self.vel_vals)
 
-                self.ax_force.relim(); self.ax_force.autoscale_view()
-                self.ax_vel.relim(); self.ax_vel.autoscale_view()
+                self.ax_force.relim()
+                self.ax_force.autoscale_view()
+                self.ax_vel.relim()
+                self.ax_vel.autoscale_view()
 
                 self.fig.canvas.draw_idle()
             time.sleep(0.05)
