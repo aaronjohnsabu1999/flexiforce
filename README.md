@@ -51,18 +51,55 @@ Coming soon: Video of the system in action!
 
 ## Installation
 
+### 1. Clone the Repository (with submodules)
 ```bash
-# Clone the repo
 git clone --recurse-submodules https://github.com/aaronjohnsabu1999/flexiforce.git
 cd flexiforce
+```
 
-# (Optional) Create a virtual environment
+> 💡 If you forgot `--recurse-submodules`, run:
+> ```bash
+> git submodule update --init --recursive
+> ```
+
+---
+
+### 2. (Optional but recommended) Set Up a Virtual Environment
+```bash
 python -m venv venv
-source venv/bin/activate  # or venv\Scripts\activate on Windows
+```
 
-# Install dependencies
+**Activate it:**
+- macOS/Linux:
+  ```bash
+  source venv/bin/activate
+  ```
+- Windows:
+  ```cmd
+  venv\Scripts\activate
+  ```
+
+---
+
+### 3. Install Dependencies
+
+```bash
 pip install -r requirements.txt
 ```
+
+If you're on **Linux**, install `tkinter` (needed for GUI):
+
+```bash
+sudo apt update && sudo apt install -y python3-tk
+```
+
+If you're on **Windows**, `tkinter` comes bundled with Python — but double-check it works:
+
+```bash
+python -m tkinter
+```
+
+A little window should pop up. If not, reinstall Python from [python.org](https://www.python.org/) and make sure **"tcl/tk and IDLE"** is checked during setup.
 
 Ensure that MuJoCo and OpenSim Python bindings are installed correctly.
 
