@@ -2,17 +2,27 @@ import numpy as np
 import mujoco
 
 
-class ParallelForceMotionController:
-    def __init__(self, model, data, site_name, Kp=250.0, Kd=5.0):
+class Controller:
+    def __init__(self, model, data, site_name):
         self.model = model
         self.data = data
         self.site_id = model.site(site_name).id
+        self.dt = 0.001  # Time step for simulation
+
+    def set_force(self, f_ext):
+        """Set the external force vector."""
+        self.force = np.array(f_ext)
+
+    def compute_torques(self, *args, **kwargs):
+        raise NotImplementedError("Subclasses must implement compute_torques")
+
+
+class ParallelForceMotionController(Controller):
+    def __init__(self, model, data, site_name, Kp=250.0, Kd=5.0):
+        super().__init__(model, data, site_name)
         self.Kp = Kp
         self.Kd = Kd
-        self.force_z = -5.0  # default z-force
-
-    def set_force_z(self, fz):
-        self.force_z = fz
+        self.force = np.array([0.0, 0.0, -5.0])  # default force
 
     def compute_torques(self, x_goal):
         mujoco.mj_forward(self.model, self.data)
@@ -24,18 +34,15 @@ class ParallelForceMotionController:
 
         F = np.zeros(3)
         F[:2] = self.Kp * dx
-        F[2] = self.force_z
+        F[2] = self.force[2]  # Only apply z-component from force input
 
         tau = J_pos.T @ F - self.Kd * self.data.qvel
         return tau, F
 
 
-class AdmittanceController:
+class AdmittanceController(Controller):
     def __init__(self, model, data, site_name, M=1.0, B=50.0, K=0.0, Kp=100.0, Kd=0.0):
-        self.model = model
-        self.data = data
-        self.site_id = model.site(site_name).id
-
+        super().__init__(model, data, site_name)
         # Admittance parameters
         self.M = M
         self.B = B
@@ -48,13 +55,12 @@ class AdmittanceController:
         # State
         self.xd = np.zeros(3)
         self.x = None
-        self.prev_time = None
-        self.f_ext = np.zeros(3)
+        self.force = np.zeros(3)
 
-    def set_external_force(self, f_ext):
-        self.f_ext = np.array(f_ext)
+    def set_force(self, f_ext):
+        self.force = np.array(f_ext)
 
-    def compute_torques(self, dt):
+    def compute_torques(self, x_goal):
         mujoco.mj_forward(self.model, self.data)
         x_now = self.data.site_xpos[self.site_id]
 
@@ -62,9 +68,9 @@ class AdmittanceController:
             self.x = x_now.copy()
 
         # Admittance dynamics: M ẍ + B ẋ + K x = F_ext
-        acc = (self.f_ext - self.B * self.xd - self.K * (self.x - x_now)) / self.M
-        self.xd += acc * dt
-        self.x += self.xd * dt
+        acc = (self.force - self.B * self.xd - self.K * (self.x - x_now)) / self.M
+        self.xd += acc * self.dt
+        self.x += self.xd * self.dt
 
         # Compute Jacobian
         J_pos = np.zeros((3, self.model.nv))
@@ -77,4 +83,4 @@ class AdmittanceController:
         vel_error = qvel_desired - self.data.qvel
         tau = self.Kp * vel_error - self.Kd * self.data.qvel
 
-        return tau, self.f_ext
+        return tau, self.force
