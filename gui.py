@@ -1,13 +1,10 @@
-# gui.py
 import os
 import matplotlib
 import time
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
-from threading import Thread
-from threading import Lock
+from threading import Thread, Lock
 
 
 def configure_matplotlib_backend(verbose=False):
@@ -35,31 +32,56 @@ class ForceControlGUI:
         self.force = kwargs.get("init_force", np.array([0.0, 0.0, -5.0]))
         self._running = True
 
+        slider_ranges = kwargs.get("slider_ranges", {})
+
         self.fig, (self.ax_slider, self.ax_force, self.ax_vel) = plt.subplots(
             3, 1, figsize=(6, 6)
         )
         plt.subplots_adjust(hspace=0.6)
 
-        # Force slider
-        self.slider_ax = self.fig.add_axes([0.2, 0.88, 0.6, 0.03])
-        self.slider = Slider(
-            self.slider_ax, "Z Force (N)", -20.0, 0.0, valinit=self.force[2]
-        )
-        self.slider.on_changed(self._on_slider_change)
+        slider_specs = [
+            {
+                "name": "slider",
+                "label": "Z Force (N)",
+                "range": slider_ranges.get("z_force", [-20.0, 0.0]),
+                "valinit": self.force[2],
+                "y_pos": 0.88,
+            },
+            {
+                "name": "slider_M",
+                "label": "Mass M",
+                "range": slider_ranges.get("mass", [0.1, 10.0]),
+                "valinit": 1.0,
+                "y_pos": 0.82,
+            },
+            {
+                "name": "slider_B",
+                "label": "Damping B",
+                "range": slider_ranges.get("damping", [0.0, 100.0]),
+                "valinit": 50.0,
+                "y_pos": 0.76,
+            },
+            {
+                "name": "slider_K",
+                "label": "Stiffness K",
+                "range": slider_ranges.get("stiffness", [0.0, 100.0]),
+                "valinit": 0.0,
+                "y_pos": 0.70,
+            },
+        ]
 
-        self.slider_ax_M = self.fig.add_axes([0.2, 0.82, 0.6, 0.03])
-        self.slider_M = Slider(self.slider_ax_M, "Mass M", 0.1, 10.0, valinit=1.0)
-        self.slider_M.on_changed(self._on_slider_change)
+        for spec in slider_specs:
+            ax = self.fig.add_axes([0.2, spec["y_pos"], 0.6, 0.03])
+            slider = Slider(
+                ax,
+                spec["label"],
+                spec["range"][0],
+                spec["range"][1],
+                valinit=spec["valinit"],
+            )
+            slider.on_changed(self._on_slider_change)
+            setattr(self, spec["name"], slider)
 
-        self.slider_ax_B = self.fig.add_axes([0.2, 0.76, 0.6, 0.03])
-        self.slider_B = Slider(self.slider_ax_B, "Damping B", 0.0, 100.0, valinit=50.0)
-        self.slider_B.on_changed(self._on_slider_change)
-
-        self.slider_ax_K = self.fig.add_axes([0.2, 0.70, 0.6, 0.03])
-        self.slider_K = Slider(self.slider_ax_K, "Stiffness K", 0.0, 100.0, valinit=0.0)
-        self.slider_K.on_changed(self._on_slider_change)
-
-        # Force and velocity plots
         self.force_vals, self.vel_vals, self.time_vals = [], [], []
         (self.force_line,) = self.ax_force.plot([], [], label="Z Force [N]")
         (self.vel_line,) = self.ax_vel.plot(
@@ -75,7 +97,6 @@ class ForceControlGUI:
         self.ax_vel.legend()
         self.ax_vel.grid(True)
 
-        # Start the update thread
         self.thread = Thread(target=self._background_update, daemon=True)
         self.thread.start()
 
@@ -102,13 +123,9 @@ class ForceControlGUI:
         pos = kwargs.get("pos", (100, 100))
         color = kwargs.get("color", (0.1, 0.1, 0.1))
 
-        # Set window title
         self.fig.canvas.manager.set_window_title(title)
-
-        # Set figure background color
         self.fig.patch.set_facecolor(color)
 
-        # Set window position and size (only if using TkAgg backend)
         try:
             backend_window = self.fig.canvas.manager.window
             backend_window.wm_geometry(f"{size[0]}x{size[1]}+{pos[0]}+{pos[1]}")

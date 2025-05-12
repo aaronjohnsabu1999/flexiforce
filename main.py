@@ -1,6 +1,7 @@
 # main.py
 import os
 import time
+import yaml
 import mujoco
 import mujoco.viewer
 import argparse
@@ -11,6 +12,10 @@ import tkinter as tk
 
 from gui import ForceControlGUI
 from controller import ParallelForceMotionController, AdmittanceController
+
+
+with open("config.yaml", "r") as f:
+    config = yaml.safe_load(f)
 
 
 def run_simulation(gui, model, data, controller, x_goal, dt, log, verbose=False):
@@ -73,16 +78,15 @@ VERBOSE = args.verbose
 
 if __name__ == "__main__":
     # Step 1: Initialize GUI
-    gui = ForceControlGUI(verbose=VERBOSE)
-    gui.set_window(
-        title="Force Control GUI",
-        size=(800, 600),
-        pos=(100, 100),
-        color=(0.1, 0.1, 0.1),
+    gui = ForceControlGUI(
+        verbose=VERBOSE,
+        init_force=np.array(config["gui"]["init_force"]),
+        slider_ranges=config["gui"].get("sliders", {}),
     )
+    gui.set_window(**config["gui"]["window"])
 
     # Step 2: Load model and controller
-    model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_fr3/fr3.xml")
+    model = mujoco.MjModel.from_xml_path(config["simulation"]["model_path"])
     data = mujoco.MjData(model)
 
     USE_ADMITTANCE = True
@@ -91,25 +95,25 @@ if __name__ == "__main__":
             model,
             data,
             site_name="attachment_site",
-            M=1.0,
-            B=50.0,
-            K=0.0,
+            **config["admittance_controller"],
             verbose=VERBOSE,
         )
     else:
         controller = ParallelForceMotionController(
-            model, data, site_name="attachment_site", verbose=VERBOSE
+            model,
+            data,
+            site_name="attachment_site",
+            **config["parallel_controller"],
+            verbose=VERBOSE,
         )
-        controller.set_force([0.0, 0.0, -5.0])  # Default force
+        controller.set_force(config["parallel_controller"]["force"])
 
     # Step 3: Set goal pose
     mujoco.mj_forward(model, data)
     x_curr = data.site_xpos[controller.site_id].copy()
-    x_goal = x_curr.copy()
-    x_goal[0] = 0.5
-    x_goal[1] = 0.0
-    x_goal[2] -= 1.0
-    dt = 0.01
+    x_offset = np.array(config["simulation"]["x_goal_offset"])
+    x_goal = x_curr + x_offset
+    dt = config["simulation"]["dt"]
 
     # Step 4: Prepare shared log for results
     log = {"time": [], "force": [], "vel": []}
