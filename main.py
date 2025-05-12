@@ -1,8 +1,9 @@
 # main.py
-import time
 import os
+import time
 import mujoco
 import mujoco.viewer
+import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from threading import Thread
@@ -12,7 +13,7 @@ from gui import ForceControlGUI
 from controller import ParallelForceMotionController, AdmittanceController
 
 
-def run_simulation(gui, model, data, controller, x_goal, dt, log):
+def run_simulation(gui, model, data, controller, x_goal, dt, log, verbose=False):
     def simulate_loop():
         start_time = time.time()
         while True:
@@ -31,6 +32,10 @@ def run_simulation(gui, model, data, controller, x_goal, dt, log):
             t = time.time() - start_time
             gui.update_plot(t, F[2], data.qvel)
 
+            if verbose:
+                print(
+                    f"t={t:.2f} | force_z={F[2]:.2f} | vel_max={np.max(np.abs(data.qvel)):.2f}"
+                )
             if t > 60.0:
                 break
 
@@ -61,18 +66,41 @@ def run_simulation(gui, model, data, controller, x_goal, dt, log):
             pass
 
 
+parser = argparse.ArgumentParser(description="Run FlexiForce simulation.")
+parser.add_argument("--verbose", action="store_true", help="Enable verbose output.")
+args = parser.parse_args()
+VERBOSE = args.verbose
+
 if __name__ == "__main__":
     # Step 1: Initialize GUI
-    gui = ForceControlGUI()
+    gui = ForceControlGUI(verbose=VERBOSE)
     gui.set_window(
-        title="Force Control GUI", size=(800, 600), pos=(100, 100), color=(0.1, 0.1, 0.1)
+        title="Force Control GUI",
+        size=(800, 600),
+        pos=(100, 100),
+        color=(0.1, 0.1, 0.1),
     )
 
     # Step 2: Load model and controller
     model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_fr3/fr3.xml")
     data = mujoco.MjData(model)
 
-    controller = ParallelForceMotionController(model, data, site_name="attachment_site")
+    USE_ADMITTANCE = True
+    if USE_ADMITTANCE:
+        controller = AdmittanceController(
+            model,
+            data,
+            site_name="attachment_site",
+            M=1.0,
+            B=50.0,
+            K=0.0,
+            verbose=VERBOSE,
+        )
+    else:
+        controller = ParallelForceMotionController(
+            model, data, site_name="attachment_site", verbose=VERBOSE
+        )
+        controller.set_force([0.0, 0.0, -5.0])  # Default force
 
     # Step 3: Set goal pose
     mujoco.mj_forward(model, data)
@@ -87,7 +115,10 @@ if __name__ == "__main__":
     log = {"time": [], "force": [], "vel": []}
 
     # Step 5: Launch simulation in background thread
-    sim_thread = Thread(target=run_simulation, args=(gui, model, data, controller, x_goal, dt, log))
+    sim_thread = Thread(
+        target=run_simulation,
+        args=(gui, model, data, controller, x_goal, dt, log, VERBOSE),
+    )
     sim_thread.start()
 
     # Step 6: Start GUI mainloop in main thread

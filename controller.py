@@ -4,11 +4,13 @@ import mujoco
 
 
 class Controller:
-    def __init__(self, model, data, site_name):
+    def __init__(self, model, data, site_name, verbose=False):
         self.model = model
         self.data = data
         self.site_id = model.site(site_name).id
         self.dt = 0.01  # Time step for simulation
+        self.verbose = verbose
+        self.force = np.zeros(3)  # External force vector
 
     def set_force(self, f_ext):
         """Set the external force vector."""
@@ -19,11 +21,10 @@ class Controller:
 
 
 class ParallelForceMotionController(Controller):
-    def __init__(self, model, data, site_name, Kp=250.0, Kd=5.0):
-        super().__init__(model, data, site_name)
-        self.Kp = Kp
-        self.Kd = Kd
-        self.force = np.array([0.0, 0.0, -5.0])  # default force
+    def __init__(self, model, data, site_name, **kwargs):
+        super().__init__(model, data, site_name, **kwargs)
+        self.Kp = kwargs.get("Kp", 250.0)
+        self.Kd = kwargs.get("Kd", 5.0)
 
     def compute_torques(self, *args, **kwargs):
         x_goal = kwargs.get("x_goal", None)
@@ -41,20 +42,25 @@ class ParallelForceMotionController(Controller):
         F[2] = self.force[2]  # Only apply z-component from force input
 
         tau = J_pos.T @ F - self.Kd * self.data.qvel
+        if self.verbose:
+            print(
+                f"[PFC] dx: {dx}, force: {self.force}, tau norm: {np.linalg.norm(tau):.2f}"
+            )
         return tau, F
 
 
 class AdmittanceController(Controller):
-    def __init__(self, model, data, site_name, M=1.0, B=50.0, K=0.0, Kp=100.0, Kd=0.0):
-        super().__init__(model, data, site_name)
+    def __init__(self, model, data, site_name, *args, **kwargs):
+        verbose = kwargs.get("verbose", False)
+        super().__init__(model, data, site_name, verbose=verbose)
         # Admittance parameters
-        self.M = M
-        self.B = B
-        self.K = K
+        self.M = kwargs.get("M", 1.0)  # Mass
+        self.B = kwargs.get("B", 50.0)  # Damping
+        self.K = kwargs.get("K", 0.0)  # Stiffness
 
         # Velocity control gains
-        self.Kp = Kp
-        self.Kd = Kd
+        self.Kp = kwargs.get("Kp", 100.0)  # Proportional gain
+        self.Kd = kwargs.get("Kd", 0.0)  # Derivative gain
 
         # State
         self.xd = np.zeros(3)
@@ -91,5 +97,8 @@ class AdmittanceController(Controller):
         # Velocity-level control in joint space
         vel_error = qvel_desired - self.data.qvel
         tau = self.Kp * vel_error - self.Kd * self.data.qvel
-
+        if self.verbose:
+            print(
+                f"[AC] x: {self.x}, xd: {self.xd}, force: {self.force}, tau norm: {np.linalg.norm(tau):.2f}"
+            )
         return tau, self.force

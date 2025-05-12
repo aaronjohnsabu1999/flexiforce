@@ -9,20 +9,28 @@ from matplotlib.widgets import Slider
 from threading import Thread
 from threading import Lock
 
-if "DISPLAY" in os.environ and os.environ["DISPLAY"]:
-    try:
-        print("TkAgg available, using TkAgg (GUI)")
-        matplotlib.use("TkAgg")
-    except ImportError:
-        print("⚠️ TkAgg not available, using Agg (no GUI)")
+
+def configure_matplotlib_backend(verbose=False):
+    if "DISPLAY" in os.environ and os.environ["DISPLAY"]:
+        try:
+            if verbose:
+                print("TkAgg available, using TkAgg (GUI)")
+            matplotlib.use("TkAgg")
+        except ImportError:
+            if verbose:
+                print("⚠️ TkAgg not available, using Agg (no GUI)")
+            matplotlib.use("Agg")
+    else:
+        if verbose:
+            print("⚠️ No DISPLAY detected, using Agg (no GUI)")
         matplotlib.use("Agg")
-else:
-    print("⚠️ No DISPLAY detected, using Agg (no GUI)")
-    matplotlib.use("Agg")
 
 
 class ForceControlGUI:
     def __init__(self, *args, **kwargs):
+        self.verbose = kwargs.get("verbose", False)
+        configure_matplotlib_backend(verbose=self.verbose)
+
         self.data_lock = Lock()
         self.force = kwargs.get("init_force", np.array([0.0, 0.0, -5.0]))
         self._running = True
