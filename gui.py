@@ -11,16 +11,19 @@ else:
     print("⚠️ No DISPLAY detected, using Agg (no GUI)")
     matplotlib.use("Agg")
 
+import time
+import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
-
 from threading import Thread
-import time
+
+matplotlib.use("TkAgg")
 
 
 class ForceControlGUI:
-    def __init__(self, init_force=-5.0):
-        self.force_z = init_force
+    def __init__(self, *args, **kwargs):
+        self.force = kwargs.get("init_force", np.array([0.0, 0.0, -5.0]))
         self._running = True
 
         self.fig, (self.ax_slider, self.ax_force, self.ax_vel) = plt.subplots(
@@ -31,7 +34,7 @@ class ForceControlGUI:
         # Force slider
         self.slider_ax = self.fig.add_axes([0.2, 0.88, 0.6, 0.03])
         self.slider = Slider(
-            self.slider_ax, "Z Force (N)", -20.0, 0.0, valinit=self.force_z
+            self.slider_ax, "Z Force (N)", -20.0, 0.0, valinit=self.force[2]
         )
         self.slider.on_changed(self._on_slider_change)
         
@@ -68,10 +71,10 @@ class ForceControlGUI:
         self.thread.start()
 
     def _on_slider_change(self, val):
-        self.force_z = val
+        self.force[2] = val
 
     def get_force(self):
-        return self.force_z
+        return self.force
         
     def get_admittance_params(self):
         return self.slider_M.val, self.slider_B.val, self.slider_K.val
@@ -80,6 +83,25 @@ class ForceControlGUI:
         self.time_vals.append(t)
         self.force_vals.append(fz)
         self.vel_vals.append(max(abs(v) for v in qvel))
+
+    def set_window(self, *args, **kwargs):
+        title = kwargs.get("title", "Force Control GUI")
+        size = kwargs.get("size", (800, 600))
+        pos = kwargs.get("pos", (100, 100))
+        color = kwargs.get("color", (0.1, 0.1, 0.1))
+
+        # Set window title
+        self.fig.canvas.manager.set_window_title(title)
+
+        # Set figure background color
+        self.fig.patch.set_facecolor(color)
+
+        # Set window position and size (only if using TkAgg backend)
+        try:
+            backend_window = self.fig.canvas.manager.window
+            backend_window.wm_geometry(f"{size[0]}x{size[1]}+{pos[0]}+{pos[1]}")
+        except Exception as e:
+            print(f"[Warning] Unable to set window geometry: {e}")
 
     def _background_update(self):
         while self._running:
