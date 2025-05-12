@@ -35,20 +35,25 @@ force_log, vel_log, time_log = [], [], []
 
 # Step 5: Launch viewer with key callback (optional)
 start_time = time.time()
-with mujoco.viewer.launch_passive(model, data) as viewer:
-    while viewer.is_running():
-        z_force = gui.get_force()
-        controller.set_external_force([0.0, 0.0, z_force])
+while True:
+    z_force = gui.get_force() if gui else -5.0
+    controller.set_external_force([0.0, 0.0, z_force])
 
-        tau, F = controller.compute_torques(x_goal)
-        data.ctrl[:] = tau
+    M_new, B_new, K_new = gui.get_admittance_params() if gui else (1.0, 50.0, 0.0)
+    controller.M = max(0.1, min(M_new, 10.0))
+    controller.B = max(0.0, min(B_new, 200.0))
+    controller.K = max(0.0, min(K_new, 200.0))
 
-        mujoco.mj_step(model, data)
-        viewer.sync()
+    tau, F = controller.compute_torques(1 / 60.0)
+    data.ctrl[:] = tau
+    mujoco.mj_step(model, data)
 
-        t = time.time() - start_time
+    t = time.time() - start_time
+    if gui:
         gui.update_plot(t, F[2], data.qvel)
 
+    if t > 5.0:
+        break
 
 # Step 6: Plot after simulation ends
 plt.figure(figsize=(10, 5))

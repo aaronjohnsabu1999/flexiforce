@@ -1,6 +1,15 @@
+import os
 import matplotlib
 
-matplotlib.use("TkAgg")  # Linux-friendly, minimal dependencies
+if "DISPLAY" in os.environ and os.environ["DISPLAY"]:
+    try:
+        matplotlib.use("TkAgg")
+    except ImportError:
+        print("⚠️ TkAgg not available, using Agg (no GUI)")
+        matplotlib.use("Agg")
+else:
+    print("⚠️ No DISPLAY detected, using Agg (no GUI)")
+    matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
@@ -25,6 +34,18 @@ class ForceControlGUI:
             self.slider_ax, "Z Force (N)", -20.0, 0.0, valinit=self.force_z
         )
         self.slider.on_changed(self._on_slider_change)
+        
+        self.slider_ax_M = self.fig.add_axes([0.2, 0.82, 0.6, 0.03])
+        self.slider_M = Slider(self.slider_ax_M, 'Mass M', 0.1, 10.0, valinit=1.0)
+        self.slider_M.on_changed(self._on_slider_change)
+
+        self.slider_ax_B = self.fig.add_axes([0.2, 0.76, 0.6, 0.03])
+        self.slider_B = Slider(self.slider_ax_B, 'Damping B', 0.0, 100.0, valinit=50.0)
+        self.slider_B.on_changed(self._on_slider_change)
+
+        self.slider_ax_K = self.fig.add_axes([0.2, 0.70, 0.6, 0.03])
+        self.slider_K = Slider(self.slider_ax_K, 'Stiffness K', 0.0, 100.0, valinit=0.0)
+        self.slider_K.on_changed(self._on_slider_change)
 
         # Force and velocity plots
         self.force_vals, self.vel_vals, self.time_vals = [], [], []
@@ -51,6 +72,9 @@ class ForceControlGUI:
 
     def get_force(self):
         return self.force_z
+        
+    def get_admittance_params(self):
+        return self.slider_M.val, self.slider_B.val, self.slider_K.val
 
     def update_plot(self, t, fz, qvel):
         self.time_vals.append(t)
