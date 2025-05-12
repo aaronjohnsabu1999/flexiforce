@@ -57,9 +57,6 @@ class AdmittanceController(Controller):
         self.x = None
         self.force = np.zeros(3)
 
-    def set_force(self, f_ext):
-        self.force = np.array(f_ext)
-
     def compute_torques(self, x_goal):
         mujoco.mj_forward(self.model, self.data)
         x_now = self.data.site_xpos[self.site_id]
