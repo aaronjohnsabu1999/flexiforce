@@ -1,8 +1,17 @@
+# gui.py
 import os
 import matplotlib
+import time
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib.widgets import Slider
+from threading import Thread
+from threading import Lock
 
 if "DISPLAY" in os.environ and os.environ["DISPLAY"]:
     try:
+        print("TkAgg available, using TkAgg (GUI)")
         matplotlib.use("TkAgg")
     except ImportError:
         print("⚠️ TkAgg not available, using Agg (no GUI)")
@@ -11,18 +20,10 @@ else:
     print("⚠️ No DISPLAY detected, using Agg (no GUI)")
     matplotlib.use("Agg")
 
-import time
-import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider
-from threading import Thread
-
-matplotlib.use("TkAgg")
-
 
 class ForceControlGUI:
     def __init__(self, *args, **kwargs):
+        self.data_lock = Lock()
         self.force = kwargs.get("init_force", np.array([0.0, 0.0, -5.0]))
         self._running = True
 
@@ -37,17 +38,17 @@ class ForceControlGUI:
             self.slider_ax, "Z Force (N)", -20.0, 0.0, valinit=self.force[2]
         )
         self.slider.on_changed(self._on_slider_change)
-        
+
         self.slider_ax_M = self.fig.add_axes([0.2, 0.82, 0.6, 0.03])
-        self.slider_M = Slider(self.slider_ax_M, 'Mass M', 0.1, 10.0, valinit=1.0)
+        self.slider_M = Slider(self.slider_ax_M, "Mass M", 0.1, 10.0, valinit=1.0)
         self.slider_M.on_changed(self._on_slider_change)
 
         self.slider_ax_B = self.fig.add_axes([0.2, 0.76, 0.6, 0.03])
-        self.slider_B = Slider(self.slider_ax_B, 'Damping B', 0.0, 100.0, valinit=50.0)
+        self.slider_B = Slider(self.slider_ax_B, "Damping B", 0.0, 100.0, valinit=50.0)
         self.slider_B.on_changed(self._on_slider_change)
 
         self.slider_ax_K = self.fig.add_axes([0.2, 0.70, 0.6, 0.03])
-        self.slider_K = Slider(self.slider_ax_K, 'Stiffness K', 0.0, 100.0, valinit=0.0)
+        self.slider_K = Slider(self.slider_ax_K, "Stiffness K", 0.0, 100.0, valinit=0.0)
         self.slider_K.on_changed(self._on_slider_change)
 
         # Force and velocity plots
@@ -70,19 +71,22 @@ class ForceControlGUI:
         self.thread = Thread(target=self._background_update, daemon=True)
         self.thread.start()
 
+        plt.show(block=False)
+
     def _on_slider_change(self, val):
         self.force[2] = val
 
     def get_force(self):
         return self.force
-        
+
     def get_admittance_params(self):
         return self.slider_M.val, self.slider_B.val, self.slider_K.val
 
     def update_plot(self, t, fz, qvel):
-        self.time_vals.append(t)
-        self.force_vals.append(fz)
-        self.vel_vals.append(max(abs(v) for v in qvel))
+        with self.data_lock:
+            self.time_vals.append(t)
+            self.force_vals.append(fz)
+            self.vel_vals.append(max(abs(v) for v in qvel))
 
     def set_window(self, *args, **kwargs):
         title = kwargs.get("title", "Force Control GUI")
@@ -105,16 +109,17 @@ class ForceControlGUI:
 
     def _background_update(self):
         while self._running:
-            if self.time_vals:
-                self.force_line.set_data(self.time_vals, self.force_vals)
-                self.vel_line.set_data(self.time_vals, self.vel_vals)
+            with self.data_lock:
+                if self.time_vals:
+                    self.force_line.set_data(self.time_vals, self.force_vals)
+                    self.vel_line.set_data(self.time_vals, self.vel_vals)
 
-                self.ax_force.relim()
-                self.ax_force.autoscale_view()
-                self.ax_vel.relim()
-                self.ax_vel.autoscale_view()
+                    self.ax_force.relim()
+                    self.ax_force.autoscale_view()
+                    self.ax_vel.relim()
+                    self.ax_vel.autoscale_view()
 
-                self.fig.canvas.draw_idle()
+            self.fig.canvas.draw_idle()
             time.sleep(0.05)
 
     def stop(self):

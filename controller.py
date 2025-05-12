@@ -1,3 +1,4 @@
+# controller.py
 import numpy as np
 import mujoco
 
@@ -7,7 +8,7 @@ class Controller:
         self.model = model
         self.data = data
         self.site_id = model.site(site_name).id
-        self.dt = 0.001  # Time step for simulation
+        self.dt = 0.01  # Time step for simulation
 
     def set_force(self, f_ext):
         """Set the external force vector."""
@@ -24,7 +25,10 @@ class ParallelForceMotionController(Controller):
         self.Kd = Kd
         self.force = np.array([0.0, 0.0, -5.0])  # default force
 
-    def compute_torques(self, x_goal):
+    def compute_torques(self, *args, **kwargs):
+        x_goal = kwargs.get("x_goal", None)
+        dt = kwargs.get("dt", self.dt)
+
         mujoco.mj_forward(self.model, self.data)
         x_curr = self.data.site_xpos[self.site_id]
         dx = x_goal[:2] - x_curr[:2]  # xy control only
@@ -57,7 +61,10 @@ class AdmittanceController(Controller):
         self.x = None
         self.force = np.zeros(3)
 
-    def compute_torques(self, x_goal):
+    def compute_torques(self, *args, **kwargs):
+        x_goal = kwargs.get("x_goal", None)
+        dt = kwargs.get("dt", self.dt)
+
         mujoco.mj_forward(self.model, self.data)
         x_now = self.data.site_xpos[self.site_id]
 
