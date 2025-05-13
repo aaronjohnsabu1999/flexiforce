@@ -1,81 +1,151 @@
+# main.py
+import os
+import time
+import yaml
 import mujoco
 import mujoco.viewer
-import mujoco.glfw
+import argparse
 import numpy as np
-import time
 import matplotlib.pyplot as plt
-from gui import ForceControlGUI
+from threading import Thread
+import tkinter as tk
 
+from gui import ForceControlGUI
 from controller import ParallelForceMotionController, AdmittanceController
 
-# Step 1: Initialize GUI
-gui = ForceControlGUI()
-gui.set_window(
-    title="Force Control GUI", size=(800, 600), pos=(100, 100), color=(0.1, 0.1, 0.1)
-)
 
-# Step 2: Load model and controller
-model = mujoco.MjModel.from_xml_path("mujoco_menagerie/franka_fr3/fr3.xml")
-data = mujoco.MjData(model)
+with open("config.yaml", "r") as f:
+    config = yaml.safe_load(f)
 
-# Initialize the controller
-USE_ADMITTANCE = False
-if USE_ADMITTANCE:
-    M, B, K = 1.0, 50.0, 0.0
-    Kp, Kd = 2000.0, 50.0
-    controller = AdmittanceController(
-        model, data, site_name="attachment_site", M=M, B=B, K=K, Kp=Kp, Kd=Kd
+
+def run_simulation(gui, model, data, controller, x_goal, dt, log, verbose=False):
+    def simulate_loop():
+        start_time = time.time()
+        while True:
+            force = gui.get_force()
+            controller.set_force(force)
+
+            M_new, B_new, K_new = gui.get_admittance_params()
+            controller.M = max(0.1, min(M_new, 10.0))
+            controller.B = max(0.0, min(B_new, 200.0))
+            controller.K = max(0.0, min(K_new, 200.0))
+
+            tau, F = controller.compute_torques(x_goal=x_goal, dt=dt)
+            data.ctrl[:] = tau
+            mujoco.mj_step(model, data)
+
+            t = time.time() - start_time
+            gui.update_plot(t, F[2], data.qvel)
+
+            if verbose:
+                print(
+                    f"t={t:.2f} | force_z={F[2]:.2f} | vel_max={np.max(np.abs(data.qvel)):.2f}"
+                )
+            if t > 60.0:
+                break
+
+            log["time"].append(t)
+            log["force"].append(F[2])
+            log["vel"].append(data.qvel.copy())
+
+            yield  # sync point for viewer
+
+    # Decide viewer or headless
+    if "DISPLAY" in os.environ and os.environ["DISPLAY"]:
+        try:
+            with mujoco.viewer.launch_passive(model, data) as viewer:
+                for _ in simulate_loop():
+                    viewer.sync()
+        except Exception as e:
+            print("\n❌ MuJoCo viewer failed to launch.")
+            print("→ Common causes:")
+            print("  - X server not running on Windows (e.g., VcXsrv)")
+            print("  - DISPLAY not set in WSL (try: export DISPLAY=:0)")
+            print("  - OpenGL drivers missing or blocked")
+            print(f"Error: {e}\n→ Running headless instead.")
+            for _ in simulate_loop():
+                pass
+    else:
+        print("⚠️ No DISPLAY detected — running headless.")
+        for _ in simulate_loop():
+            pass
+
+
+parser = argparse.ArgumentParser(description="Run FlexiForce simulation.")
+parser.add_argument("--verbose", action="store_true", help="Enable verbose output.")
+args = parser.parse_args()
+VERBOSE = args.verbose
+
+if __name__ == "__main__":
+    # Step 1: Initialize GUI
+    gui = ForceControlGUI(
+        verbose=VERBOSE,
+        init_force=np.array(config["gui"]["init_force"]),
+        slider_ranges=config["gui"].get("sliders", {}),
     )
-else:
-    # Use ParallelForceMotionController for force control
-    controller = ParallelForceMotionController(model, data, site_name="attachment_site")
+    gui.set_window(**config["gui"]["window"])
 
-# Step 3: Set goal pose - straight line down at x = 0.5 m from base
-mujoco.mj_forward(model, data)
-x_curr = data.site_xpos[controller.site_id].copy()
-x_goal = x_curr.copy()
-x_goal[0] = 0.5  # Set x to 0.5 m in front of base
-x_goal[1] = 0.0  # Centered on y
-x_goal[2] -= 1.0  # 10 cm downward
+    # Step 2: Load model and controller
+    model = mujoco.MjModel.from_xml_path(config["simulation"]["model_path"])
+    data = mujoco.MjData(model)
 
-# Step 4: Setup data logging
-force_log, vel_log, time_log = [], [], []
+    USE_ADMITTANCE = True
+    if USE_ADMITTANCE:
+        controller = AdmittanceController(
+            model,
+            data,
+            site_name="attachment_site",
+            **config["admittance_controller"],
+            verbose=VERBOSE,
+        )
+    else:
+        controller = ParallelForceMotionController(
+            model,
+            data,
+            site_name="attachment_site",
+            **config["parallel_controller"],
+            verbose=VERBOSE,
+        )
+        controller.set_force(config["parallel_controller"]["force"])
 
-# Step 5: Launch viewer with key callback (optional)
-start_time = time.time()
-with mujoco.viewer.launch_passive(model, data) as viewer:
-    while viewer.is_running():
-        force = gui.get_force()
-        controller.set_force(force)
+    # Step 3: Set goal pose
+    mujoco.mj_forward(model, data)
+    x_curr = data.site_xpos[controller.site_id].copy()
+    x_offset = np.array(config["simulation"]["x_goal_offset"])
+    x_goal = x_curr + x_offset
+    dt = config["simulation"]["dt"]
 
-        tau, F = controller.compute_torques(x_goal)
-        data.ctrl[:] = tau
+    # Step 4: Prepare shared log for results
+    log = {"time": [], "force": [], "vel": []}
 
-        mujoco.mj_step(model, data)
-        viewer.sync()
+    # Step 5: Launch simulation in background thread
+    sim_thread = Thread(
+        target=run_simulation,
+        args=(gui, model, data, controller, x_goal, dt, log, VERBOSE),
+    )
+    sim_thread.start()
 
-        t = time.time() - start_time
-        gui.update_plot(t, F[2], data.qvel)
+    # Step 6: Start GUI mainloop in main thread
+    try:
+        tk.mainloop()
+    finally:
+        # gui.stop()
+        sim_thread.join()
 
-        # Optional: log data
-        time_log.append(t)
-        force_log.append(F[2])
-        vel_log.append(data.qvel.copy())
+    # Step 7: Final results plot
+    plt.figure(figsize=(10, 5), num="Simulation Results")
+    plt.subplot(2, 1, 1)
+    plt.plot(log["time"], log["force"], label="Z Force [N]")
+    plt.ylabel("Z Force (N)")
+    plt.grid()
+    plt.legend()
 
-# Step 6: Plot after simulation ends
-plt.figure(figsize=(10, 5))
-plt.subplot(2, 1, 1)
-plt.plot(time_log, force_log, label="Z Force [N]")
-plt.ylabel("Z Force (N)")
-plt.grid()
-plt.legend()
+    plt.subplot(2, 1, 2)
+    plt.plot(log["time"], [v[0] for v in log["vel"]], label="Joint 1 Velocity")
+    plt.ylabel("Joint Velocity (rad/s)")
+    plt.xlabel("Time (s)")
+    plt.grid()
+    plt.legend()
 
-plt.subplot(2, 1, 2)
-plt.plot(time_log, [v[0] for v in vel_log], label="Joint 1 Velocity")
-plt.ylabel("Joint Velocity (rad/s)")
-plt.xlabel("Time (s)")
-plt.grid()
-plt.legend()
-
-plt.tight_layout()
-plt.show()
+    plt.tight_layout()
+    plt.show()

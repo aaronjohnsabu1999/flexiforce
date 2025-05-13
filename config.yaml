@@ -1,0 +1,31 @@
+simulation:
+  duration: 60.0
+  dt: 0.01
+  model_path: mujoco_menagerie/franka_fr3/fr3.xml
+  use_admittance: true
+  x_goal_offset: [0.5, 0.0, -1.0]  # relative offset from current pose
+
+gui:
+  init_force: [0.0, 0.0, -5.0]
+  window:
+    title: Force Control GUI
+    size: [800, 600]
+    pos: [100, 100]
+    color: [0.1, 0.1, 0.1]
+  sliders:
+    z_force: [-20.0, 0.0]
+    mass: [0.1, 10.0]
+    damping: [0.0, 100.0]
+    stiffness: [0.0, 100.0]
+
+admittance_controller:
+  M: 1.0
+  B: 50.0
+  K: 0.0
+  Kp: 100.0
+  Kd: 0.0
+
+parallel_controller:
+  Kp: 250.0
+  Kd: 5.0
+  force: [0.0, 0.0, -5.0]

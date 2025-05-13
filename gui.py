@@ -1,31 +1,87 @@
+import os
+import matplotlib
 import time
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
-from threading import Thread
+from threading import Thread, Lock
 
-matplotlib.use("TkAgg")
+
+def configure_matplotlib_backend(verbose=False):
+    if "DISPLAY" in os.environ and os.environ["DISPLAY"]:
+        try:
+            if verbose:
+                print("TkAgg available, using TkAgg (GUI)")
+            matplotlib.use("TkAgg")
+        except ImportError:
+            if verbose:
+                print("⚠️ TkAgg not available, using Agg (no GUI)")
+            matplotlib.use("Agg")
+    else:
+        if verbose:
+            print("⚠️ No DISPLAY detected, using Agg (no GUI)")
+        matplotlib.use("Agg")
 
 
 class ForceControlGUI:
     def __init__(self, *args, **kwargs):
+        self.verbose = kwargs.get("verbose", False)
+        configure_matplotlib_backend(verbose=self.verbose)
+
+        self.data_lock = Lock()
         self.force = kwargs.get("init_force", np.array([0.0, 0.0, -5.0]))
         self._running = True
+
+        slider_ranges = kwargs.get("slider_ranges", {})
 
         self.fig, (self.ax_slider, self.ax_force, self.ax_vel) = plt.subplots(
             3, 1, figsize=(6, 6)
         )
         plt.subplots_adjust(hspace=0.6)
 
-        # Force slider
-        self.slider_ax = self.fig.add_axes([0.2, 0.88, 0.6, 0.03])
-        self.slider = Slider(
-            self.slider_ax, "Z Force (N)", -20.0, 0.0, valinit=self.force[2]
-        )
-        self.slider.on_changed(self._on_slider_change)
+        slider_specs = [
+            {
+                "name": "slider",
+                "label": "Z Force (N)",
+                "range": slider_ranges.get("z_force", [-20.0, 0.0]),
+                "valinit": self.force[2],
+                "y_pos": 0.88,
+            },
+            {
+                "name": "slider_M",
+                "label": "Mass M",
+                "range": slider_ranges.get("mass", [0.1, 10.0]),
+                "valinit": 1.0,
+                "y_pos": 0.82,
+            },
+            {
+                "name": "slider_B",
+                "label": "Damping B",
+                "range": slider_ranges.get("damping", [0.0, 100.0]),
+                "valinit": 50.0,
+                "y_pos": 0.76,
+            },
+            {
+                "name": "slider_K",
+                "label": "Stiffness K",
+                "range": slider_ranges.get("stiffness", [0.0, 100.0]),
+                "valinit": 0.0,
+                "y_pos": 0.70,
+            },
+        ]
 
-        # Force and velocity plots
+        for spec in slider_specs:
+            ax = self.fig.add_axes([0.2, spec["y_pos"], 0.6, 0.03])
+            slider = Slider(
+                ax,
+                spec["label"],
+                spec["range"][0],
+                spec["range"][1],
+                valinit=spec["valinit"],
+            )
+            slider.on_changed(self._on_slider_change)
+            setattr(self, spec["name"], slider)
+
         self.force_vals, self.vel_vals, self.time_vals = [], [], []
         (self.force_line,) = self.ax_force.plot([], [], label="Z Force [N]")
         (self.vel_line,) = self.ax_vel.plot(
@@ -41,9 +97,10 @@ class ForceControlGUI:
         self.ax_vel.legend()
         self.ax_vel.grid(True)
 
-        # Start the update thread
         self.thread = Thread(target=self._background_update, daemon=True)
         self.thread.start()
+
+        plt.show(block=False)
 
     def _on_slider_change(self, val):
         self.force[2] = val
@@ -51,10 +108,14 @@ class ForceControlGUI:
     def get_force(self):
         return self.force
 
+    def get_admittance_params(self):
+        return self.slider_M.val, self.slider_B.val, self.slider_K.val
+
     def update_plot(self, t, fz, qvel):
-        self.time_vals.append(t)
-        self.force_vals.append(fz)
-        self.vel_vals.append(max(abs(v) for v in qvel))
+        with self.data_lock:
+            self.time_vals.append(t)
+            self.force_vals.append(fz)
+            self.vel_vals.append(max(abs(v) for v in qvel))
 
     def set_window(self, *args, **kwargs):
         title = kwargs.get("title", "Force Control GUI")
@@ -62,13 +123,9 @@ class ForceControlGUI:
         pos = kwargs.get("pos", (100, 100))
         color = kwargs.get("color", (0.1, 0.1, 0.1))
 
-        # Set window title
         self.fig.canvas.manager.set_window_title(title)
-
-        # Set figure background color
         self.fig.patch.set_facecolor(color)
 
-        # Set window position and size (only if using TkAgg backend)
         try:
             backend_window = self.fig.canvas.manager.window
             backend_window.wm_geometry(f"{size[0]}x{size[1]}+{pos[0]}+{pos[1]}")
@@ -77,16 +134,17 @@ class ForceControlGUI:
 
     def _background_update(self):
         while self._running:
-            if self.time_vals:
-                self.force_line.set_data(self.time_vals, self.force_vals)
-                self.vel_line.set_data(self.time_vals, self.vel_vals)
+            with self.data_lock:
+                if self.time_vals:
+                    self.force_line.set_data(self.time_vals, self.force_vals)
+                    self.vel_line.set_data(self.time_vals, self.vel_vals)
 
-                self.ax_force.relim()
-                self.ax_force.autoscale_view()
-                self.ax_vel.relim()
-                self.ax_vel.autoscale_view()
+                    self.ax_force.relim()
+                    self.ax_force.autoscale_view()
+                    self.ax_vel.relim()
+                    self.ax_vel.autoscale_view()
 
-                self.fig.canvas.draw_idle()
+            self.fig.canvas.draw_idle()
             time.sleep(0.05)
 
     def stop(self):
