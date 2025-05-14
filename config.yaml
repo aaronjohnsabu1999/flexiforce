@@ -4,6 +4,7 @@ simulation:
   model_path: mujoco_menagerie/franka_fr3/fr3.xml
   use_admittance: true
   x_goal_offset: [0.5, 0.0, -1.0]  # relative offset from current pose
+  max_force: 50.0  # maximum possible voluntary contraction in Newtons
 
 gui:
   init_force: [0.0, 0.0, -5.0]
