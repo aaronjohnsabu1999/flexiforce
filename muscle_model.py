@@ -1,13 +1,14 @@
 import numpy as np
 
+
 def bicep_force_profile(joint_angle_rad, joint_velocity_rad_s, *args, **kwargs):
     """
     Estimate biceps force during a curl based on elbow joint angle and velocity.
-    
+
     Args:
         joint_angle_rad: Elbow joint angle in radians (0 = extended, ~2.36 = flexed)
         joint_velocity_rad_s: Angular velocity in rad/s
-    
+
     Returns:
         3D force vector (Nx, Ny, Nz) in end-effector frame or world frame
     """

@@ -18,8 +18,12 @@ class Controller:
         if target_mvc is not None:
             self.target_mvc = target_mvc
 
-    def compute_torques(self, *args, **kwargs):
+    def compute_torques(self, x_goal=None, dt=None, **kwargs):
         raise NotImplementedError("Subclasses must implement compute_torques")
+
+    def _log(self, message):
+        if self.verbose:
+            print(message)
 
 
 class ParallelForceMotionController(Controller):
@@ -28,9 +32,9 @@ class ParallelForceMotionController(Controller):
         self.Kp = kwargs.get("Kp", 250.0)
         self.Kd = kwargs.get("Kd", 5.0)
 
-    def compute_torques(self, *args, **kwargs):
-        x_goal = kwargs.get("x_goal", None)
-        dt = kwargs.get("dt", self.dt)
+    def compute_torques(self, x_goal=None, dt=None, **kwargs):
+        if dt is not None:
+            self.dt = dt
 
         mujoco.mj_forward(self.model, self.data)
         x_curr = self.data.site_xpos[self.site_id]
@@ -44,10 +48,9 @@ class ParallelForceMotionController(Controller):
         F[2] = self.force[2]
 
         tau = J_pos.T @ F - self.Kd * self.data.qvel
-        if self.verbose:
-            print(
-                f"[PFC] dx: {dx}, force: {self.force}, tau norm: {np.linalg.norm(tau):.2f}"
-            )
+        self._log(
+            f"[PFC] dx: {dx}, force: {self.force}, tau norm: {np.linalg.norm(tau):.2f}"
+        )
         return tau, F
 
 
@@ -69,9 +72,9 @@ class AdmittanceController(Controller):
         self.x = None
         self.force = np.zeros(3)
 
-    def compute_torques(self, *args, **kwargs):
-        x_goal = kwargs.get("x_goal", None)
-        dt = kwargs.get("dt", self.dt)
+    def compute_torques(self, x_goal=None, dt=None, **kwargs):
+        if dt is not None:
+            self.dt = dt
 
         mujoco.mj_forward(self.model, self.data)
         x_now = self.data.site_xpos[self.site_id]
@@ -86,7 +89,7 @@ class AdmittanceController(Controller):
 
         # Safety: reset if velocity explodes
         if np.any(np.abs(self.xd) > 1000.0):
-            print("⚠️ Warning: xd overflow — resetting to zero.")
+            self._log("⚠️ Warning: xd overflow — resetting to zero.")
             self.xd[:] = 0.0
 
         # Compute Jacobian
@@ -99,8 +102,7 @@ class AdmittanceController(Controller):
         # Velocity-level control in joint space
         vel_error = qvel_desired - self.data.qvel
         tau = self.Kp * vel_error - self.Kd * self.data.qvel
-        if self.verbose:
-            print(
-                f"[AC] x: {self.x}, xd: {self.xd}, force: {self.force}, tau norm: {np.linalg.norm(tau):.2f}"
-            )
+        self._log(
+            f"[AC] x: {self.x}, xd: {self.xd}, force: {self.force}, tau norm: {np.linalg.norm(tau):.2f}"
+        )
         return tau, self.force

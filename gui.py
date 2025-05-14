@@ -38,13 +38,13 @@ class ForceControlGUI:
         self.stiffness = kwargs.get("stiffness", 50.0)
 
         slider_ranges = kwargs.get("slider_ranges", {})
-        
+
         def get_range_and_default(key, fallback):
             values = slider_ranges.get(key, fallback)
             if len(values) == 3:
                 return values[:2], values[2]
             return values, (values[0] + values[1]) / 2
-        
+
         self.fig, (self.ax_slider, self.ax_force, self.ax_vel) = plt.subplots(
             3, 1, figsize=(6, 6)
         )
@@ -59,13 +59,15 @@ class ForceControlGUI:
             ("stiffness", "Stiffness K", 0.70),
         ]:
             range_vals, default_val = get_range_and_default(key, [0.0, 100.0, 0.0])
-            slider_specs.append({
-                "name": f"slider_{key.replace('_', '')}",
-                "label": label,
-                "range": range_vals,
-                "valinit": default_val,
-                "y_pos": y_pos,
-            })
+            slider_specs.append(
+                {
+                    "name": f"slider_{key.replace('_', '')}",
+                    "label": label,
+                    "range": range_vals,
+                    "valinit": default_val,
+                    "y_pos": y_pos,
+                }
+            )
 
         for spec in slider_specs:
             ax = self.fig.add_axes([0.2, spec["y_pos"], 0.6, 0.03])

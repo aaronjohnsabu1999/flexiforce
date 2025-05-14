@@ -25,9 +25,13 @@ def run_simulation(gui, model, data, controller, x_goal, dt, log, verbose=False)
             force = gui.get_force()
 
             target_mvc = gui.get_target_mvc()  # Retrieve target MVC from GUI
-            max_force = config["simulation"]["max_force"]  # Max voluntary contraction force
+            max_force = config["simulation"][
+                "max_force"
+            ]  # Max voluntary contraction force
             desired_force_z = -(target_mvc / 100.0) * max_force
-            force[2] = desired_force_z  # Override the GUI force z-component with target MVC-based force
+            force[2] = (
+                desired_force_z  # Override the GUI force z-component with target MVC-based force
+            )
             controller.set_force(force, target_mvc=target_mvc)
 
             M_new, B_new, K_new = gui.get_admittance_params()
