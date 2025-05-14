@@ -32,6 +32,10 @@ class ForceControlGUI:
         self.data_lock = Lock()
         self.force = kwargs.get("init_force", np.array([0.0, 0.0, -5.0]))
         self._running = True
+        self.target_mvc = kwargs.get("target_mvc", 0.0)
+        self.mass = kwargs.get("mass", 1.0)
+        self.damping = kwargs.get("damping", 50.0)
+        self.stiffness = kwargs.get("stiffness", 50.0)
 
         slider_ranges = kwargs.get("slider_ranges", {})
         
