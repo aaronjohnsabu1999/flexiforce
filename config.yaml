@@ -2,7 +2,7 @@ simulation:
   duration: 60.0
   dt: 0.01
   model_path: mujoco_menagerie/franka_fr3/fr3.xml
-  use_admittance: true
+  controller: "AC"
   x_goal_offset: [0.5, 0.0, -1.0]  # relative offset from current pose
   max_force: 50.0  # maximum possible voluntary contraction in Newtons
 
@@ -11,23 +11,49 @@ gui:
   window:
     title: Force Control GUI
     size: [800, 600]
-    pos: [100, 100]
+    pos : [100, 100]
     color: [0.1, 0.1, 0.1]
   sliders:
-    mvc: [0.0, 100.0, 60.0]  # min, max, default
-    mass: [0.1, 10.0, 1.0]
-    damping: [0.0, 100.0, 50.0]
-    stiffness: [0.0, 100.0, 0.0]
-    z_force: [-20.0, 0.0, -5.0]
+    mvc:
+      label: "%MVC (Target Effort)"
+      range: [0.0, 100.0]
+      default: 60.0
+      controller: "all"
+    z_force:
+      label: "Z Force (N)"
+      range: [-20.0, 0.0]
+      default: -5.0
+      controller: "all"
+    M:
+      label: "Mass M"
+      range: [0.1, 10.0]
+      default: 1.0
+      controller: "AC"
+    B:
+      label: "Damping B"
+      range: [0.0, 200.0]
+      default: 50.0
+      controller: "AC"
+    K:
+      label: "Stiffness K"
+      range: [0.0, 100.0]
+      default: 0.0
+      controller: "AC"
 
 admittance_controller:
-  M: 1.0
-  B: 50.0
-  K: 0.0
-  Kp: 100.0
-  Kd: 0.0
+  M    :   1.00
+  B    :  50.00
+  K    :   0.00
+  Kp   : 100.00
+  Kd   :   0.00
+  M_min:   0.01
+  M_max: 100.00
+  B_min:   0.01
+  B_max: 100.00
+  K_min:   0.00
+  K_max: 100.00
 
 parallel_controller:
   Kp: 250.0
-  Kd: 5.0
+  Kd:   5.0
   force: [0.0, 0.0, -5.0]

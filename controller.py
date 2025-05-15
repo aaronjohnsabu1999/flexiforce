@@ -5,6 +5,7 @@ import mujoco
 
 class Controller:
     def __init__(self, model, data, site_name, verbose=False):
+        self.type = None
         self.model = model
         self.data = data
         self.site_id = model.site(site_name).id
@@ -29,6 +30,7 @@ class Controller:
 class ParallelForceMotionController(Controller):
     def __init__(self, model, data, site_name, **kwargs):
         super().__init__(model, data, site_name, **kwargs)
+        self.type = "PFC"
         self.Kp = kwargs.get("Kp", 250.0)
         self.Kd = kwargs.get("Kd", 5.0)
 
@@ -58,6 +60,8 @@ class AdmittanceController(Controller):
     def __init__(self, model, data, site_name, *args, **kwargs):
         verbose = kwargs.get("verbose", False)
         super().__init__(model, data, site_name, verbose=verbose)
+        self.type = "AC"
+
         # Admittance parameters
         self.M = kwargs.get("M", 1.0)  # Mass
         self.B = kwargs.get("B", 50.0)  # Damping
@@ -67,6 +71,19 @@ class AdmittanceController(Controller):
         self.Kp = kwargs.get("Kp", 100.0)  # Proportional gain
         self.Kd = kwargs.get("Kd", 0.0)  # Derivative gain
 
+        # Adaptation parameters
+        self.adapt_gain_m = kwargs.get("adapt_gain_m", 0.0)
+        self.adapt_gain_b = kwargs.get("adapt_gain_b", 0.0)
+        self.adapt_gain_k = kwargs.get("adapt_gain_k", 0.0)
+
+        # Admittance limits
+        self.M_min = kwargs.get("M_min", None)
+        self.M_max = kwargs.get("M_max", None)
+        self.B_min = kwargs.get("B_min", None)
+        self.B_max = kwargs.get("B_max", None)
+        self.K_min = kwargs.get("K_min", None)
+        self.K_max = kwargs.get("K_max", None)
+
         # State
         self.xd = np.zeros(3)
         self.x = None
@@ -75,6 +92,10 @@ class AdmittanceController(Controller):
     def compute_torques(self, x_goal=None, dt=None, **kwargs):
         if dt is not None:
             self.dt = dt
+
+        measured_mvc = kwargs.get("measured_mvc", None)
+        if measured_mvc is not None:
+            self.adapt_parameters(measured_mvc)
 
         mujoco.mj_forward(self.model, self.data)
         x_now = self.data.site_xpos[self.site_id]
@@ -106,3 +127,22 @@ class AdmittanceController(Controller):
             f"[AC] x: {self.x}, xd: {self.xd}, force: {self.force}, tau norm: {np.linalg.norm(tau):.2f}"
         )
         return tau, self.force
+
+    def adapt_parameters(self, measured_mvc):
+        error = self.target_mvc - measured_mvc
+
+        self.M += self.adapt_gain_m * error
+        self.B += self.adapt_gain_b * error
+        self.K += self.adapt_gain_k * error
+
+        try:
+            self.M = np.clip(self.M, self.M_min, self.M_max)
+            self.B = np.clip(self.B, self.B_min, self.B_max)
+            self.K = np.clip(self.K, self.K_min, self.K_max)
+        except AttributeError:
+            self._log("⚠️ Warning: Clipping parameters not set — skipping clipping.")
+            return
+
+        self._log(
+            f"[AC] Adapted M={self.M:.2f}, B={self.B:.2f}, K={self.K:.2f} based on error={error:.2f}"
+        )

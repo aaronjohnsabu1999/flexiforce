@@ -18,6 +18,14 @@ with open("config.yaml", "r") as f:
     config = yaml.safe_load(f)
 
 
+def update_controller_params(controller, gui):
+    if controller.type == "AC":
+        M_new, B_new, K_new = gui.get_admittance_params()
+        controller.M = np.clip(M_new, controller.M_min, controller.M_max)
+        controller.B = np.clip(B_new, controller.B_min, controller.B_max)
+        controller.K = np.clip(K_new, controller.K_min, controller.K_max)
+
+
 def run_simulation(gui, model, data, controller, x_goal, dt, log, verbose=False):
     def simulate_loop():
         start_time = time.time()
@@ -33,11 +41,7 @@ def run_simulation(gui, model, data, controller, x_goal, dt, log, verbose=False)
                 desired_force_z  # Override the GUI force z-component with target MVC-based force
             )
             controller.set_force(force, target_mvc=target_mvc)
-
-            M_new, B_new, K_new = gui.get_admittance_params()
-            controller.M = max(0.1, min(M_new, 10.0))
-            controller.B = max(0.0, min(B_new, 200.0))
-            controller.K = max(0.0, min(K_new, 200.0))
+            update_controller_params(controller, gui)
 
             tau, F = controller.compute_torques(x_goal=x_goal, dt=dt)
             data.ctrl[:] = tau
@@ -90,7 +94,8 @@ if __name__ == "__main__":
     gui = ForceControlGUI(
         verbose=VERBOSE,
         init_force=np.array(config["gui"]["init_force"]),
-        slider_ranges=config["gui"].get("sliders", {}),
+        sliders=config["gui"]["sliders"],
+        controller=config["simulation"]["controller"],
     )
     gui.set_window(**config["gui"]["window"])
 
@@ -98,8 +103,7 @@ if __name__ == "__main__":
     model = mujoco.MjModel.from_xml_path(config["simulation"]["model_path"])
     data = mujoco.MjData(model)
 
-    USE_ADMITTANCE = True
-    if USE_ADMITTANCE:
+    if config["simulation"].get("controller") == "AC":
         controller = AdmittanceController(
             model,
             data,
@@ -107,7 +111,7 @@ if __name__ == "__main__":
             **config["admittance_controller"],
             verbose=VERBOSE,
         )
-    else:
+    elif config["simulation"].get("controller") == "PFC":
         controller = ParallelForceMotionController(
             model,
             data,
@@ -116,6 +120,10 @@ if __name__ == "__main__":
             verbose=VERBOSE,
         )
         controller.set_force(config["parallel_controller"]["force"])
+    else:
+        raise ValueError(
+            "Invalid controller type. Choose 'AC' for Admittance or 'PFC' for Parallel Force Control."
+        )
 
     # Step 3: Set goal pose
     mujoco.mj_forward(model, data)

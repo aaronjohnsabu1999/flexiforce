@@ -1,8 +1,8 @@
 # gui.py
 import os
-import matplotlib
 import time
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 from threading import Thread, Lock
@@ -32,54 +32,28 @@ class ForceControlGUI:
         self.data_lock = Lock()
         self.force = kwargs.get("init_force", np.array([0.0, 0.0, -5.0]))
         self._running = True
-        self.target_mvc = kwargs.get("target_mvc", 0.0)
-        self.mass = kwargs.get("mass", 1.0)
-        self.damping = kwargs.get("damping", 50.0)
-        self.stiffness = kwargs.get("stiffness", 50.0)
-
-        slider_ranges = kwargs.get("slider_ranges", {})
-
-        def get_range_and_default(key, fallback):
-            values = slider_ranges.get(key, fallback)
-            if len(values) == 3:
-                return values[:2], values[2]
-            return values, (values[0] + values[1]) / 2
+        self.controller = kwargs.get("controller", None)
 
         self.fig, (self.ax_slider, self.ax_force, self.ax_vel) = plt.subplots(
             3, 1, figsize=(6, 6)
         )
         plt.subplots_adjust(hspace=0.6)
 
-        slider_specs = []
-        for key, label, y_pos in [
-            ("mvc", "%MVC (Target Effort)", 0.94),
-            ("z_force", "Z Force (N)", 0.88),
-            ("mass", "Mass M", 0.82),
-            ("damping", "Damping B", 0.76),
-            ("stiffness", "Stiffness K", 0.70),
-        ]:
-            range_vals, default_val = get_range_and_default(key, [0.0, 100.0, 0.0])
-            slider_specs.append(
-                {
-                    "name": f"slider_{key.replace('_', '')}",
-                    "label": label,
-                    "range": range_vals,
-                    "valinit": default_val,
-                    "y_pos": y_pos,
-                }
-            )
-
-        for spec in slider_specs:
-            ax = self.fig.add_axes([0.2, spec["y_pos"], 0.6, 0.03])
-            slider = Slider(
-                ax,
-                spec["label"],
-                spec["range"][0],
-                spec["range"][1],
-                valinit=spec["valinit"],
-            )
-            slider.on_changed(self._on_slider_change)
-            setattr(self, spec["name"], slider)
+        self.sliders = {}
+        sliders_config = kwargs.get("sliders", {})
+        slider_count = 0
+        for key, cfg in sliders_config.items():
+            label = cfg.get("label", key)
+            min_val, max_val = cfg["range"]
+            default = cfg.get("default", (min_val + max_val) / 2)
+            allowed = cfg.get("controller", "all")
+            if allowed == "all" or (self.controller and self.controller in allowed):
+                y_pos = 0.94 - slider_count * 0.06
+                ax = self.fig.add_axes([0.2, y_pos, 0.6, 0.03])
+                slider = Slider(ax, label, min_val, max_val, valinit=default)
+                slider.on_changed(self._on_slider_change)
+                self.sliders[key] = slider
+                slider_count += 1
 
         self.force_vals, self.vel_vals, self.time_vals = [], [], []
         (self.force_line,) = self.ax_force.plot([], [], label="Z Force [N]")
@@ -102,20 +76,26 @@ class ForceControlGUI:
         plt.show(block=False)
 
     def _on_slider_change(self, val):
-        self.force[2] = self.slider_Fz.val
-        self.mass = self.slider_M.val
-        self.damping = self.slider_B.val
-        self.stiffness = self.slider_K.val
-        self.target_mvc = self.slider_mvc.val
+        self.force[2] = self.get_slider_value("z_force", self.force[2])
+
+    def get_slider_value(self, key, default=None):
+        return self.sliders.get(key).val if key in self.sliders else default
+
+    def get_all_slider_values(self):
+        return {k: s.val for k, s in self.sliders.items()}
 
     def get_force(self):
         return self.force
 
     def get_target_mvc(self):
-        return self.target_mvc
+        return self.get_slider_value("mvc", 0.0)
 
     def get_admittance_params(self):
-        return self.mass, self.damping, self.stiffness
+        return (
+            self.get_slider_value("M", 1.0),
+            self.get_slider_value("B", 50.0),
+            self.get_slider_value("K", 0.0),
+        )
 
     def update_plot(self, t, fz, qvel):
         with self.data_lock:
