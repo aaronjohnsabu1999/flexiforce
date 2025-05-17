@@ -26,6 +26,7 @@ def configure_matplotlib_backend(verbose=False):
 
 class ForceControlGUI:
     def __init__(self, *args, **kwargs):
+        self.enable_viewer = kwargs.get("enable_viewer", True)
         self.verbose = kwargs.get("verbose", False)
         configure_matplotlib_backend(verbose=self.verbose)
 
@@ -73,6 +74,7 @@ class ForceControlGUI:
         self.thread = Thread(target=self._background_update, daemon=True)
         self.thread.start()
 
+        # if self.enable_viewer:
         plt.show(block=False)
 
     def _on_slider_change(self, val):
@@ -88,7 +90,10 @@ class ForceControlGUI:
         return self.force
 
     def get_target_mvc(self):
-        return self.get_slider_value("mvc", 0.0)
+        return self.get_slider_value("target_mvc", 0.0)
+
+    def get_max_force(self):
+        return self.get_slider_value("max_force", 400.0)
 
     def get_admittance_params(self):
         return (
@@ -130,6 +135,7 @@ class ForceControlGUI:
                     self.ax_vel.relim()
                     self.ax_vel.autoscale_view()
 
+            # if self.enable_viewer:
             self.fig.canvas.draw_idle()
             time.sleep(0.05)
 
