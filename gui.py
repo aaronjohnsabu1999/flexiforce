@@ -78,13 +78,11 @@ class ForceControlGUI:
         plt.show(block=False)
 
     def _on_slider_change(self, val):
-        self.force[2] = self.get_slider_value("z_force", self.force[2])
-
-    def get_slider_value(self, key, default=None):
-        return self.sliders.get(key).val if key in self.sliders else default
-
-    def get_all_slider_values(self):
-        return {k: s.val for k, s in self.sliders.items()}
+        self.force[2] = self.slider_zforce.val
+        self.mass = self.slider_mass.val
+        self.damping = self.slider_damping.val
+        self.stiffness = self.slider_stiffness.val
+        self.target_mvc = self.slider_mvc.val
 
     def get_force(self):
         return self.force
