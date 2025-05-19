@@ -37,11 +37,19 @@ if __name__ == "__main__":
 
     if config["simulation"].get("controller") == "AC":
         controller = AdmittanceController(
-            model, data, site_name="attachment_site", **config["admittance_controller"], verbose=args.verbose,
+            model,
+            data,
+            site_name="attachment_site",
+            **config["admittance_controller"],
+            verbose=args.verbose,
         )
     elif config["simulation"].get("controller") == "PFC":
         controller = ParallelForceMotionController(
-            model, data, site_name="attachment_site", **config["parallel_controller"], verbose=args.verbose,
+            model,
+            data,
+            site_name="attachment_site",
+            **config["parallel_controller"],
+            verbose=args.verbose,
         )
         controller.set_force(config["parallel_controller"]["force"])
     else:
@@ -54,7 +62,9 @@ if __name__ == "__main__":
     x_goal = x_curr + np.array(config["simulation"]["x_goal_offset"])
     dt = config["simulation"]["dt"]
 
-    sim = Simulation(config, gui, controller, model, data, x_goal, dt, verbose=args.verbose)
+    sim = Simulation(
+        config, gui, controller, model, data, x_goal, dt, verbose=args.verbose
+    )
     sim_thread = Thread(target=sim.run)
     sim_thread.start()
 

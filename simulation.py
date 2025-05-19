@@ -8,6 +8,7 @@ import mujoco.viewer
 from threading import Thread
 import logging
 
+
 class Simulation:
     def __init__(self, config, gui, controller, model, data, x_goal, dt, verbose=False):
         self.config = config
@@ -84,7 +85,9 @@ class Simulation:
         plt.legend()
 
         plt.subplot(2, 1, 2)
-        plt.plot(self.log["time"], [v[0] for v in self.log["vel"]], label="Joint 1 Velocity")
+        plt.plot(
+            self.log["time"], [v[0] for v in self.log["vel"]], label="Joint 1 Velocity"
+        )
         plt.ylabel("Joint Velocity (rad/s)")
         plt.xlabel("Time (s)")
         plt.grid()
