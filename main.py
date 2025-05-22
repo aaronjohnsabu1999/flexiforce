@@ -15,23 +15,18 @@ from simulation import Simulation
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run FlexiForce simulation.")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output.")
+    parser.add_argument(
+        "--nogui", action="store_true", help="Run without GUI (feature branch style)"
+    )
     args = parser.parse_args()
-    logging.basicConfig(level=logging.INFO if args.verbose else logging.WARNING)
+    logging.basicConfig(
+        level=logging.INFO if args.verbose else logging.WARNING,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
 
     with open("config.yaml", "r") as f:
         config = yaml.safe_load(f)
 
-    # GUI setup
-    gui = ForceControlGUI(
-        verbose=args.verbose,
-        init_force=np.array(config["gui"]["init_force"]),
-        sliders=config["gui"]["sliders"],
-        controller=config["simulation"]["controller"],
-        enable_viewer=enable_viewer,
-    )
-    gui.set_window(**config["gui"]["window"])
-
-    # Model/controller
     model = mujoco.MjModel.from_xml_path(config["simulation"]["model_path"])
     data = mujoco.MjData(model)
 
@@ -41,7 +36,7 @@ if __name__ == "__main__":
             data,
             site_name="attachment_site",
             **config["admittance_controller"],
-            verbose=args.verbose,
+            verbose=args.verbose
         )
     elif config["simulation"].get("controller") == "PFC":
         controller = ParallelForceMotionController(
@@ -49,18 +44,29 @@ if __name__ == "__main__":
             data,
             site_name="attachment_site",
             **config["parallel_controller"],
-            verbose=args.verbose,
+            verbose=args.verbose
         )
         controller.set_force(config["parallel_controller"]["force"])
     else:
-        raise ValueError(
-            "Invalid controller type. Choose 'AC' for Admittance or 'PFC' for Parallel Force Control."
-        )
+        raise ValueError("Invalid controller type. Choose 'AC' or 'PFC'.")
 
+    data.qpos[:] = np.array([0.0, -0.3, 0.0, -1.57, 0.0, 1.57, 0.0])
+    data.qvel[:] = 0.0
     mujoco.mj_forward(model, data)
     x_curr = data.site_xpos[controller.site_id].copy()
-    x_goal = x_curr + np.array(config["simulation"]["x_goal_offset"])
+    x_goal = np.array(config["simulation"]["x_goal"])
     dt = config["simulation"]["dt"]
+
+    gui = None
+    if not args.nogui:
+        gui = ForceControlGUI(
+            verbose=args.verbose,
+            init_force=np.array(config["gui"]["init_force"]),
+            sliders=config["gui"]["sliders"],
+            controller=controller,
+            enable_viewer=True,
+        )
+        gui.set_window(**config["gui"]["window"])
 
     sim = Simulation(
         config, gui, controller, model, data, x_goal, dt, verbose=args.verbose
@@ -69,7 +75,10 @@ if __name__ == "__main__":
     sim_thread.start()
 
     try:
-        tk.mainloop()
+        if gui:
+            tk.mainloop()
+        else:
+            sim_thread.join()  # headless mode, no GUI loop
     finally:
         sim.stop()
         sim_thread.join()

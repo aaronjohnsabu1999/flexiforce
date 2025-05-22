@@ -4,3 +4,5 @@ pyyaml
 mujoco
 matplotlib
 pandas
+black
+scipy

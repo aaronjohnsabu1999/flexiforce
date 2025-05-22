@@ -1,10 +1,11 @@
 simulation:
   enable_viewer: true
-  duration: 60.0
+  duration: 30.0
   dt: 0.01
   model_path: mujoco_menagerie/franka_fr3/fr3.xml
   controller: "AC"
-  x_goal_offset: [0.5, 0.0, -1.0]  # relative offset from current pose
+  x_goal: [0.5, 0.5, 1.0, 1.57, 0.0, 0.0] 
+  max_force: 50.0  # maximum possible voluntary contraction in Newtons
 
 gui:
   init_force: [0.0, 0.0, -5.0]
@@ -42,10 +43,10 @@ gui:
 
 admittance_controller:
   M    :   1.00
-  B    :  50.00
-  K    :   0.00
+  B    :  10.00
+  K    :  10.00
   Kp   : 100.00
-  Kd   :   0.00
+  Kd   :  10.00
   M_min:   0.01
   M_max: 100.00
   B_min:   0.01

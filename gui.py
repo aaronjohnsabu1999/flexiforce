@@ -77,15 +77,40 @@ class ForceControlGUI:
         # if self.enable_viewer:
         plt.show(block=False)
 
+    def is_admittance_controller(self):
+        return self.controller and self.controller.type == "AC"
+
+    def is_parallel_force_motion_controller(self):
+        return self.controller and self.controller.type == "PFC"
+
     def _on_slider_change(self, val):
-        self.force[2] = self.slider_zforce.val
-        self.mass = self.slider_mass.val
-        self.damping = self.slider_damping.val
-        self.stiffness = self.slider_stiffness.val
-        self.target_mvc = self.slider_mvc.val
+        self.force = np.array(
+            [
+                self.get_slider_value("force_x", 0.0),
+                self.get_slider_value("force_y", 0.0),
+                self.get_slider_value("force_z", -5.0),
+            ]
+        )
+        if self.verbose:
+            print(f"Slider changed: {val}, Force updated to {self.force}")
+
+    def get_slider_value(self, key, default=None):
+        slider = self.sliders.get(key)
+        if slider is not None:
+            return slider.val
+        elif default is not None:
+            return default
+        else:
+            raise ValueError(f"Slider '{key}' not found and no default value provided.")
 
     def get_force(self):
-        return self.force
+        return np.array(
+            [
+                self.get_slider_value("force_x", 0.0),
+                self.get_slider_value("force_y", 0.0),
+                self.get_slider_value("force_z", -5.0),
+            ]
+        )
 
     def get_target_mvc(self):
         return self.get_slider_value("target_mvc", 0.0)
@@ -94,10 +119,13 @@ class ForceControlGUI:
         return self.get_slider_value("max_force", 400.0)
 
     def get_admittance_params(self):
+        assert (
+            self.is_admittance_controller()
+        ), "Controller is not an AdmittanceController"
         return (
-            self.get_slider_value("M", 1.0),
-            self.get_slider_value("B", 50.0),
-            self.get_slider_value("K", 0.0),
+            self.get_slider_value("mass", 1.0),
+            self.get_slider_value("damping", 0.1),
+            self.get_slider_value("stiffness", 0.0),
         )
 
     def update_plot(self, t, fz, qvel):
