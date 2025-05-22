@@ -9,44 +9,33 @@ import numpy as np
 import matplotlib.pyplot as plt
 from threading import Thread
 import tkinter as tk
+from scipy.spatial.transform import Rotation as R
 
-from gui import ForceControlGUI
-from controller import ParallelForceMotionController, AdmittanceController
+from controller import AdmittanceController
 
 
 with open("config.yaml", "r") as f:
     config = yaml.safe_load(f)
 
 
-def run_simulation(gui, model, data, controller, x_goal, dt, log, verbose=False):
+def run_simulation(model, data, controller, dt, log, force_input, verbose=False):
     def simulate_loop():
         start_time = time.time()
         while True:
-            force = gui.get_force()
 
-            target_mvc = gui.get_target_mvc()  # Retrieve target MVC from GUI
-            max_force = config["simulation"]["max_force"]  # Max voluntary contraction force
-            desired_force_z = -(target_mvc / 100.0) * max_force
-            force[2] = desired_force_z  # Override the GUI force z-component with target MVC-based force
-            controller.set_force(force, target_mvc=target_mvc)
+            controller.set_force(force_input)
 
-            M_new, B_new, K_new = gui.get_admittance_params()
-            controller.M = max(0.1, min(M_new, 10.0))
-            controller.B = max(0.0, min(B_new, 200.0))
-            controller.K = max(0.0, min(K_new, 200.0))
-
-            tau, F = controller.compute_torques(x_goal=x_goal, dt=dt)
+            t = time.time() - start_time
+            tau, F = controller.compute_torques(dt=dt, time=t)
             data.ctrl[:] = tau
             mujoco.mj_step(model, data)
 
-            t = time.time() - start_time
-            gui.update_plot(t, F[2], data.qvel)
 
             if verbose:
                 print(
-                    f"t={t:.2f} | MVC={target_mvc}% | force_z={F[2]:.2f} | vel_max={np.max(np.abs(data.qvel)):.2f}"
+                    f"t={t:.2f} | force_z={F[2]:.2f} | vel_max={np.max(np.abs(data.qvel)):.2f}"
                 )
-            if t > 60.0:
+            if t > 5.0:
                 break
 
             log["time"].append(t)
@@ -82,13 +71,9 @@ args = parser.parse_args()
 VERBOSE = args.verbose
 
 if __name__ == "__main__":
-    # Step 1: Initialize GUI
-    gui = ForceControlGUI(
-        verbose=VERBOSE,
-        init_force=np.array(config["gui"]["init_force"]),
-        slider_ranges=config["gui"].get("sliders", {}),
-    )
-    gui.set_window(**config["gui"]["window"])
+    default_force_z = -config["simulation"]["max_force"] * 0.5  # simulate 50% MVC TODO replace with the gui and Opensim values
+    default_force = np.zeros(6)
+    default_force[2] = default_force_z  # Z-force only
 
     # Step 2: Load model and controller
     model = mujoco.MjModel.from_xml_path(config["simulation"]["model_path"])
@@ -103,39 +88,35 @@ if __name__ == "__main__":
             **config["admittance_controller"],
             verbose=VERBOSE,
         )
-    else:
-        controller = ParallelForceMotionController(
-            model,
-            data,
-            site_name="attachment_site",
-            **config["parallel_controller"],
-            verbose=VERBOSE,
-        )
-        controller.set_force(config["parallel_controller"]["force"])
 
     # Step 3: Set goal pose
+    # Set home configuration manually (in radians)
+    home_q = np.array([0.0, -0.3, 0.0, -1.57, 0.0, 1.57, 0.0])
+    data.qpos[:] = home_q
+    data.qvel[:] = 0.0
     mujoco.mj_forward(model, data)
     x_curr = data.site_xpos[controller.site_id].copy()
-    x_offset = np.array(config["simulation"]["x_goal_offset"])
-    x_goal = x_curr + x_offset
+    x_goal = np.array(config["simulation"]["x_goal"])
     dt = config["simulation"]["dt"]
 
+    # Get current orientation in rotation matrix
+    R_curr = data.site_xmat[controller.site_id].reshape((3, 3))
+    rotvec_curr = R.from_matrix(R_curr).as_rotvec()
+
     # Step 4: Prepare shared log for results
-    log = {"time": [], "force": [], "vel": []}
+    log = {
+    "time": [],
+    "force": [],       # scalar z-force
+    "vel": []}
+
 
     # Step 5: Launch simulation in background thread
-    sim_thread = Thread(
-        target=run_simulation,
-        args=(gui, model, data, controller, x_goal, dt, log, VERBOSE),
-    )
-    sim_thread.start()
+    run_simulation(model, data, controller, dt, log, default_force, VERBOSE)
 
-    # Step 6: Start GUI mainloop in main thread
-    try:
-        tk.mainloop()
-    finally:
-        # gui.stop()
-        sim_thread.join()
+    # Convert to NumPy arrays after the run
+    log["time"] = np.array(log["time"])       # shape (T,)
+    log["force"] = np.array(log["force"])     # shape (T,)
+    log["vel"] = np.vstack(log["vel"])        # shape (T, 7)
 
     # Step 7: Final results plot
     plt.figure(figsize=(10, 5), num="Simulation Results")
@@ -146,11 +127,12 @@ if __name__ == "__main__":
     plt.legend()
 
     plt.subplot(2, 1, 2)
-    plt.plot(log["time"], [v[0] for v in log["vel"]], label="Joint 1 Velocity")
+    for j in range(7):
+        plt.plot(log["time"], log["vel"][:, j], label=f'Joint {j+1}')
     plt.ylabel("Joint Velocity (rad/s)")
     plt.xlabel("Time (s)")
     plt.grid()
-    plt.legend()
+    plt.legend(loc="upper right")
 
     plt.tight_layout()
     plt.show()
