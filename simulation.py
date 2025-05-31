@@ -29,26 +29,28 @@ class Simulation:
         self.desired_force = np.zeros(6)
         start_time = time.time()
         while not self._stop:
-            target_mvc = (
-                self.gui.get_target_mvc() if self.gui else 50.0
-            )  # Default to 50% if GUI is not available
-            max_force = self.config["simulation"]["max_force"]
+            target_mvc = self.gui.get_target_mvc() if self.gui else 50.0
+            max_force = (
+                self.gui.get_max_force()
+                if self.gui
+                else self.config["simulation"]["max_force"]
+            )
             self.desired_force[2] = -(target_mvc / 100.0) * max_force
             self.controller.set_force(self.desired_force, target_mvc=target_mvc)
 
             if self.gui and self.gui.is_admittance_controller():
                 M_new, B_new, K_new = self.gui.get_admittance_params()
                 self.controller.M = max(
-                    self.config["simulation"]["min_M"],
-                    min(M_new, self.config["simulation"]["max_M"]),
+                    self.config["admittance_controller"]["M_min"],
+                    min(M_new, self.config["admittance_controller"]["M_max"]),
                 )
                 self.controller.B = max(
-                    self.config["simulation"]["min_B"],
-                    min(B_new, self.config["simulation"]["max_B"]),
+                    self.config["admittance_controller"]["B_min"],
+                    min(B_new, self.config["admittance_controller"]["B_max"]),
                 )
                 self.controller.K = max(
-                    self.config["simulation"]["min_K"],
-                    min(K_new, self.config["simulation"]["max_K"]),
+                    self.config["admittance_controller"]["K_min"],
+                    min(K_new, self.config["admittance_controller"]["K_max"]),
                 )
 
             t = time.time() - start_time
@@ -62,8 +64,10 @@ class Simulation:
                 self.gui.update_plot(t, actual_force[2], self.data.qvel)
 
             if self.verbose:
+                if self.gui:
+                    self.gui.log_slider_changes()
                 logging.info(
-                    f"t={t:.2f} | MVC={target_mvc}% | force_z={actual_force[2]:.2f} | vel_max={np.max(np.abs(self.data.qvel)):.2f}"
+                    f"t={t:.2f} | MVC={target_mvc:.3f}% | force_z={actual_force[2]:.3f} | vel_max={np.max(np.abs(self.data.qvel)):.3f}"
                 )
             if t > self.config["simulation"]["duration"]:
                 logging.info("Simulation duration reached, stopping.")

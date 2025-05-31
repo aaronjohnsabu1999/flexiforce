@@ -6,6 +6,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 from threading import Thread, Lock
+import logging
 
 
 def configure_matplotlib_backend(verbose=False):
@@ -31,7 +32,6 @@ class ForceControlGUI:
         configure_matplotlib_backend(verbose=self.verbose)
 
         self.data_lock = Lock()
-        self.force = kwargs.get("init_force", np.array([0.0, 0.0, -5.0]))
         self._running = True
         self.controller = kwargs.get("controller", None)
 
@@ -41,6 +41,7 @@ class ForceControlGUI:
         plt.subplots_adjust(hspace=0.6)
 
         self.sliders = {}
+        self.slider_last_values = {}
         sliders_config = kwargs.get("sliders", {})
         slider_count = 0
         for key, cfg in sliders_config.items():
@@ -48,12 +49,28 @@ class ForceControlGUI:
             min_val, max_val = cfg["range"]
             default = cfg.get("default", (min_val + max_val) / 2)
             allowed = cfg.get("controller", "all")
-            if allowed == "all" or (self.controller and self.controller in allowed):
+            if allowed == "all" or (
+                self.controller and self.controller.type in allowed
+            ):
                 y_pos = 0.94 - slider_count * 0.06
                 ax = self.fig.add_axes([0.2, y_pos, 0.6, 0.03])
                 slider = Slider(ax, label, min_val, max_val, valinit=default)
-                slider.on_changed(self._on_slider_change)
                 self.sliders[key] = slider
+                setattr(
+                    self, key, default
+                )  # Initialize the variable with the default value
+                self.slider_last_values[key] = default
+
+                # Create a callback function to update the attribute and log the change
+                def make_callback(attr_name):
+                    def callback(val):
+                        setattr(self, attr_name, val)
+                        logging.info(f"Slider '{attr_name}' changed to {val:.2f}")
+
+                    return callback
+
+                slider.on_changed(make_callback(key))
+                logging.info(f"Slider '{key}' initialized to {default:.2f}")
                 slider_count += 1
 
         self.force_vals, self.vel_vals, self.time_vals = [], [], []
@@ -71,11 +88,9 @@ class ForceControlGUI:
         self.ax_vel.legend()
         self.ax_vel.grid(True)
 
-        self.thread = Thread(target=self._background_update, daemon=True)
-        self.thread.start()
-
+        self._schedule_update()
         # if self.enable_viewer:
-        plt.show(block=False)
+        plt.show()
 
     def is_admittance_controller(self):
         return self.controller and self.controller.type == "AC"
@@ -83,49 +98,29 @@ class ForceControlGUI:
     def is_parallel_force_motion_controller(self):
         return self.controller and self.controller.type == "PFC"
 
-    def _on_slider_change(self, val):
-        self.force = np.array(
-            [
-                self.get_slider_value("force_x", 0.0),
-                self.get_slider_value("force_y", 0.0),
-                self.get_slider_value("force_z", -5.0),
-            ]
-        )
-        if self.verbose:
-            print(f"Slider changed: {val}, Force updated to {self.force}")
-
-    def get_slider_value(self, key, default=None):
-        slider = self.sliders.get(key)
-        if slider is not None:
-            return slider.val
-        elif default is not None:
-            return default
-        else:
-            raise ValueError(f"Slider '{key}' not found and no default value provided.")
-
     def get_force(self):
         return np.array(
             [
-                self.get_slider_value("force_x", 0.0),
-                self.get_slider_value("force_y", 0.0),
-                self.get_slider_value("force_z", -5.0),
+                getattr(self, "force_x", 0.0),
+                getattr(self, "force_y", 0.0),
+                getattr(self, "force_z", -5.0),
             ]
         )
 
     def get_target_mvc(self):
-        return self.get_slider_value("target_mvc", 0.0)
+        return getattr(self, "target_mvc", 0.0)
 
     def get_max_force(self):
-        return self.get_slider_value("max_force", 400.0)
+        return getattr(self, "max_force", 400.0)
 
     def get_admittance_params(self):
         assert (
             self.is_admittance_controller()
         ), "Controller is not an AdmittanceController"
         return (
-            self.get_slider_value("mass", 1.0),
-            self.get_slider_value("damping", 0.1),
-            self.get_slider_value("stiffness", 0.0),
+            getattr(self, "mass", 1.0),
+            getattr(self, "damping", 10.0),
+            getattr(self, "stiffness", 10.0),
         )
 
     def update_plot(self, t, fz, qvel):
@@ -133,6 +128,15 @@ class ForceControlGUI:
             self.time_vals.append(t)
             self.force_vals.append(fz)
             self.vel_vals.append(max(abs(v) for v in qvel))
+
+    def log_slider_changes(self):
+        for key, slider in self.sliders.items():
+            current_val = getattr(self, key)
+            last_val = self.slider_last_values.get(key)
+
+            if not np.isclose(current_val, last_val):
+                logging.info(f"  Slider '{key}' changed to {current_val:.3f}")
+                self.slider_last_values[key] = current_val
 
     def set_window(self, *args, **kwargs):
         title = kwargs.get("title", "Force Control GUI")
@@ -148,6 +152,10 @@ class ForceControlGUI:
             backend_window.wm_geometry(f"{size[0]}x{size[1]}+{pos[0]}+{pos[1]}")
         except Exception as e:
             print(f"[Warning] Unable to set window geometry: {e}")
+
+    def _schedule_update(self):
+        self._background_update()
+        self.fig.canvas.manager.window.after(50, self._schedule_update)
 
     def _background_update(self):
         while self._running:

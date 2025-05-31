@@ -16,7 +16,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run FlexiForce simulation.")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output.")
     parser.add_argument(
-        "--nogui", action="store_true", help="Run without GUI (feature branch style)"
+        "--gui", action="store_true", help="Run with GUI (default: False)."
     )
     args = parser.parse_args()
     logging.basicConfig(
@@ -58,10 +58,9 @@ if __name__ == "__main__":
     dt = config["simulation"]["dt"]
 
     gui = None
-    if not args.nogui:
+    if args.gui:
         gui = ForceControlGUI(
             verbose=args.verbose,
-            init_force=np.array(config["gui"]["init_force"]),
             sliders=config["gui"]["sliders"],
             controller=controller,
             enable_viewer=True,
