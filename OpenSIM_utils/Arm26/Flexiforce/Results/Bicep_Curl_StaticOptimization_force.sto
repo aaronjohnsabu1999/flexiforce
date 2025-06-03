@@ -1,0 +1,16 @@
+ModelForces
+version=1
+nRows=1
+nColumns=7
+inDegrees=no
+
+This file contains the forces exerted on a model during a simulation.
+
+A force is a generalized force, meaning that it can be either a force (N) or a torque (Nm).
+
+Units are S.I. units (second, meters, Newtons, ...)
+If the header above contains a line with 'inDegrees', this indicates whether rotational values are in degrees (yes) or radians (no).
+
+endheader
+time	TRIlong	TRIlat	TRImed	BIClong	BICshort	BRA
+      2.00000000	      5.81928843	     50.86104371	     51.34335147	    101.05828513	      3.60945925	      7.06610454

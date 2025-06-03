@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<OpenSimDocument Version="40600">
+	<ControlSet name="Control Set">
+		<objects>
+			<ControlLinear name="TRIlong">
+				<is_model_control>true</is_model_control>
+				<extrapolate>true</extrapolate>
+				<default_min>0.02</default_min>
+				<default_max>1</default_max>
+				<filter_on>false</filter_on>
+				<use_steps>false</use_steps>
+				<x_nodes>
+					<ControlLinearNode>
+						<t>2</t>
+						<value>0.010006005594326094</value>
+					</ControlLinearNode>
+				</x_nodes>
+				<min_nodes />
+				<max_nodes />
+				<kp>100</kp>
+				<kv>20</kv>
+			</ControlLinear>
+			<ControlLinear name="TRIlat">
+				<is_model_control>true</is_model_control>
+				<extrapolate>true</extrapolate>
+				<default_min>0.02</default_min>
+				<default_max>1</default_max>
+				<filter_on>false</filter_on>
+				<use_steps>false</use_steps>
+				<x_nodes>
+					<ControlLinearNode>
+						<t>2</t>
+						<value>0.082456124691990026</value>
+					</ControlLinearNode>
+				</x_nodes>
+				<min_nodes />
+				<max_nodes />
+				<kp>100</kp>
+				<kv>20</kv>
+			</ControlLinear>
+			<ControlLinear name="TRImed">
+				<is_model_control>true</is_model_control>
+				<extrapolate>true</extrapolate>
+				<default_min>0.02</default_min>
+				<default_max>1</default_max>
+				<filter_on>false</filter_on>
+				<use_steps>false</use_steps>
+				<x_nodes>
+					<ControlLinearNode>
+						<t>2</t>
+						<value>0.08284583959907478</value>
+					</ControlLinearNode>
+				</x_nodes>
+				<min_nodes />
+				<max_nodes />
+				<kp>100</kp>
+				<kv>20</kv>
+			</ControlLinear>
+			<ControlLinear name="BIClong">
+				<is_model_control>true</is_model_control>
+				<extrapolate>true</extrapolate>
+				<default_min>0.02</default_min>
+				<default_max>1</default_max>
+				<filter_on>false</filter_on>
+				<use_steps>false</use_steps>
+				<x_nodes>
+					<ControlLinearNode>
+						<t>2</t>
+						<value>0.23783303378753018</value>
+					</ControlLinearNode>
+				</x_nodes>
+				<min_nodes />
+				<max_nodes />
+				<kp>100</kp>
+				<kv>20</kv>
+			</ControlLinear>
+			<ControlLinear name="BICshort">
+				<is_model_control>true</is_model_control>
+				<extrapolate>true</extrapolate>
+				<default_min>0.02</default_min>
+				<default_max>1</default_max>
+				<filter_on>false</filter_on>
+				<use_steps>false</use_steps>
+				<x_nodes>
+					<ControlLinearNode>
+						<t>2</t>
+						<value>0.014525929270686581</value>
+					</ControlLinearNode>
+				</x_nodes>
+				<min_nodes />
+				<max_nodes />
+				<kp>100</kp>
+				<kv>20</kv>
+			</ControlLinear>
+			<ControlLinear name="BRA">
+				<is_model_control>true</is_model_control>
+				<extrapolate>true</extrapolate>
+				<default_min>0.02</default_min>
+				<default_max>1</default_max>
+				<filter_on>false</filter_on>
+				<use_steps>false</use_steps>
+				<x_nodes>
+					<ControlLinearNode>
+						<t>2</t>
+						<value>0.010042020422425149</value>
+					</ControlLinearNode>
+				</x_nodes>
+				<min_nodes />
+				<max_nodes />
+				<kp>100</kp>
+				<kv>20</kv>
+			</ControlLinear>
+		</objects>
+		<groups />
+	</ControlSet>
+</OpenSimDocument>
