@@ -8,13 +8,15 @@ class Controller:
         self.model = model
         self.data = data
         self.site_id = model.site(site_name).id
-        self.dt = 0.01  # Time step for simulation
+        self.dt = 0.01
         self.verbose = verbose
-        self.force = np.zeros(3)  # External force vector
+        self.force = np.zeros(3)
+        self.target_mvc = 0.0
 
-    def set_force(self, f_ext):
-        """Set the external force vector."""
+    def set_force(self, f_ext, target_mvc=None):
         self.force = np.array(f_ext)
+        if target_mvc is not None:
+            self.target_mvc = target_mvc
 
     def compute_torques(self, *args, **kwargs):
         raise NotImplementedError("Subclasses must implement compute_torques")
@@ -32,14 +34,14 @@ class ParallelForceMotionController(Controller):
 
         mujoco.mj_forward(self.model, self.data)
         x_curr = self.data.site_xpos[self.site_id]
-        dx = x_goal[:2] - x_curr[:2]  # xy control only
+        dx = x_goal[:2] - x_curr[:2]
 
         J_pos = np.zeros((3, self.model.nv))
         mujoco.mj_jacSite(self.model, self.data, J_pos, None, self.site_id)
 
         F = np.zeros(3)
         F[:2] = self.Kp * dx
-        F[2] = self.force[2]  # Only apply z-component from force input
+        F[2] = self.force[2]
 
         tau = J_pos.T @ F - self.Kd * self.data.qvel
         if self.verbose:

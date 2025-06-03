@@ -23,7 +23,12 @@ def run_simulation(gui, model, data, controller, x_goal, dt, log, verbose=False)
         start_time = time.time()
         while True:
             force = gui.get_force()
-            controller.set_force(force)
+
+            target_mvc = gui.get_target_mvc()  # Retrieve target MVC from GUI
+            max_force = config["simulation"]["max_force"]  # Max voluntary contraction force
+            desired_force_z = -(target_mvc / 100.0) * max_force
+            force[2] = desired_force_z  # Override the GUI force z-component with target MVC-based force
+            controller.set_force(force, target_mvc=target_mvc)
 
             M_new, B_new, K_new = gui.get_admittance_params()
             controller.M = max(0.1, min(M_new, 10.0))
@@ -39,7 +44,7 @@ def run_simulation(gui, model, data, controller, x_goal, dt, log, verbose=False)
 
             if verbose:
                 print(
-                    f"t={t:.2f} | force_z={F[2]:.2f} | vel_max={np.max(np.abs(data.qvel)):.2f}"
+                    f"t={t:.2f} | MVC={target_mvc}% | force_z={F[2]:.2f} | vel_max={np.max(np.abs(data.qvel)):.2f}"
                 )
             if t > 60.0:
                 break
