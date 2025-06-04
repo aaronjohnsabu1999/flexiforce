@@ -17,6 +17,12 @@ class AdmittanceController:
         self.M = np.ones(6) * M_val
         self.B = np.ones(6) * B_val
         self.K = np.ones(6) * K_val
+        M_val = kwargs.get("M", 1.0)
+        B_val = kwargs.get("B", 50.0)
+        K_val = kwargs.get("K", 10.0)
+        self.M = np.ones(6) * M_val
+        self.B = np.ones(6) * B_val
+        self.K = np.ones(6) * K_val
 
         # Velocity control gains
         self.Kp = kwargs.get("Kp", 100.0)
@@ -77,3 +83,22 @@ class AdmittanceController:
             print(f"[AC] t={time:.2f} | x_ref: {x_ref[:3]} | force_z={self.force[2]:.2f} | ||tau||={np.linalg.norm(tau):.2f}")
 
         return tau, self.force
+
+    def adapt_parameters(self, measured_mvc):
+        error = self.target_mvc - measured_mvc
+
+        self.M += self.adapt_gain_m * error
+        self.B += self.adapt_gain_b * error
+        self.K += self.adapt_gain_k * error
+
+        try:
+            self.M = np.clip(self.M, self.M_min, self.M_max)
+            self.B = np.clip(self.B, self.B_min, self.B_max)
+            self.K = np.clip(self.K, self.K_min, self.K_max)
+        except AttributeError:
+            self._log("⚠️ Warning: Clipping parameters not set — skipping clipping.")
+            return
+
+        self._log(
+            f"[AC] Adapted M={self.M:.2f}, B={self.B:.2f}, K={self.K:.2f} based on error={error:.2f}"
+        )

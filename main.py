@@ -1,12 +1,9 @@
 # main.py
-import os
-import time
+import argparse
 import yaml
 import mujoco
-import mujoco.viewer
-import argparse
 import numpy as np
-import matplotlib.pyplot as plt
+import tkinter as tk
 from threading import Thread
 import tkinter as tk
 from scipy.spatial.transform import Rotation as R
@@ -79,14 +76,13 @@ if __name__ == "__main__":
     model = mujoco.MjModel.from_xml_path(config["simulation"]["model_path"])
     data = mujoco.MjData(model)
 
-    USE_ADMITTANCE = True
-    if USE_ADMITTANCE:
+    if config["simulation"].get("controller") == "AC":
         controller = AdmittanceController(
             model,
             data,
             site_name="attachment_site",
             **config["admittance_controller"],
-            verbose=VERBOSE,
+            verbose=args.verbose
         )
 
     # Step 3: Set goal pose
