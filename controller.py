@@ -81,8 +81,10 @@ class AdmittanceController:
         """Get reference pose and velocity at given time"""
         if self.trajectory_func is None:
             # Default stationary trajectory at current position
-            if self.x_adm is not None:
-                return self.x_adm.copy(), np.zeros(6)
+            if self.x_adm is None:
+                self.x_adm = x_ref.copy()
+                self.xd_adm = xd_ref.copy()
+
             else:
                 return np.zeros(6), np.zeros(6)
         
@@ -98,57 +100,6 @@ class AdmittanceController:
         
         return x_ref, xd_ref
     
-    def get_contact_forces(self):
-        """Extract contact forces from MuJoCo simulation"""
-        if not self.use_contact_forces:
-            return np.zeros(6)
-        
-        total_force = np.zeros(3)
-        total_torque = np.zeros(3)
-        
-        # If no specific geom IDs provided, check all contacts
-        if not self.contact_geom_ids:
-            for i in range(self.data.ncon):
-                contact = self.data.contact[i]
-                # Get contact force
-                c_array = np.zeros(6)
-                mujoco.mj_contactForce(self.model, self.data, i, c_array)
-                force = c_array[:3]
-                
-                # Contact position
-                pos = contact.pos.copy()
-                
-                # Compute torque about end-effector
-                ee_pos = self.get_current_pose()[0]
-                r = pos - ee_pos
-                torque = np.cross(r, force)
-                
-                total_force += force
-                total_torque += torque
-        else:
-            # Check specific geometry contacts
-            for i in range(self.data.ncon):
-                contact = self.data.contact[i]
-                if (contact.geom1 in self.contact_geom_ids or 
-                    contact.geom2 in self.contact_geom_ids):
-                    
-                    # Get contact force in world frame
-                    c_array = np.zeros(6)
-                    mujoco.mj_contactForce(self.model, self.data, i, c_array)
-                    force = c_array[:3]
-                    
-                    # Contact position
-                    pos = contact.pos.copy()
-                    
-                    # Compute torque about end-effector
-                    ee_pos = self.get_current_pose()[0]
-                    r = pos - ee_pos
-                    torque = np.cross(r, force)
-                    
-                    total_force += force
-                    total_torque += torque
-        
-        return np.hstack((total_force, total_torque))
     
     def pose_to_spatial(self, pos, quat):
         """Convert position and quaternion to spatial pose vector"""
@@ -197,67 +148,38 @@ class AdmittanceController:
         return np.vstack((Jp, Jr))  # Shape: (6, nv)
     
     def compute_torques(self, dt, time=0.0, **kwargs):
-        """Main control computation
-        
-        Admittance control formulation:
-        M * ẍ_adm + B * ẋ_adm + K * (x_adm - x_ref) = F_error
-        
-        Where:
-        - x_adm is the admittance trajectory (what the robot should follow)
-        - x_ref is the desired reference trajectory
-        - F_error = F_desired - F_measured is the force error
-        """
-        # Forward kinematics
         mujoco.mj_forward(self.model, self.data)
-        
-        # Get current actual pose
+
         pos_now, quat_now = self.get_current_pose()
         x_actual = self.pose_to_spatial(pos_now, quat_now)
-        
-        # Initialize admittance state on first call
+
         if self.x_adm is None:
             self.x_adm = x_actual.copy()
             self.xd_adm = np.zeros(6)
-        
-        # Get time-variant reference trajectory
+
         x_ref, xd_ref = self.get_reference_at_time(time)
-        
-        # Measure forces (either from contacts or assume desired forces are met)
-        if self.use_contact_forces:
-            self.force_measured = self.get_contact_forces()
-        else:
-            # For simulation purposes, assume some compliance
-            self.force_measured = self.force_desired # 80% of desired force
-        
-        # Force error (positive means we need more force)
+
+
         force_error = self.force_desired - self.force_measured
-        
-        # Admittance dynamics: M*ẍ + B*ẋ + K*(x - x_ref) = F_error
-        # Solve for acceleration: ẍ = (F_error - B*ẋ - K*(x - x_ref)) / M
-        
+
         position_error = self.x_adm - x_ref
         velocity_error = self.xd_adm - xd_ref
-        
-        # Prevent division by zero
+
         M_safe = np.maximum(self.M, 1e-6)
-        
-        # Compute admittance acceleration
-        self.xdd_adm = (force_error - self.B * velocity_error - self.K * position_error) / M_safe
-        
-        # Integrate admittance dynamics (Euler integration)
+
+        self.xdd_adm = (force_error - self.B @ self.xd_adm - self.K @ position_error) / M_safe
+
         self.xd_adm += self.xdd_adm * dt
         self.x_adm += self.xd_adm * dt
-        
-        # Compute spatial Jacobian
+
         J = self.compute_spatial_jacobian()
         
-        # Compute desired joint velocity using regular pseudo-inverse
+
+
         if J.shape[1] > 0:
-            # Use numpy's pseudo-inverse (no damping)
             J_pinv = np.linalg.pinv(J)
             qvel_desired = J_pinv @ self.xd_adm
-            
-            # Ensure qvel_desired has correct size
+
             if len(qvel_desired) > self.model.nv:
                 qvel_desired = qvel_desired[:self.model.nv]
             elif len(qvel_desired) < self.model.nv:
@@ -266,33 +188,20 @@ class AdmittanceController:
                 qvel_desired = temp
         else:
             qvel_desired = np.zeros(self.model.nv)
-        
-        # Joint-level PD control
+
         qvel_error = qvel_desired - self.data.qvel
         tau = self.Kp * qvel_error - self.Kd * self.data.qvel
-        
-        # Ensure tau has correct size for actuators
-        if len(tau) > self.model.nu:
-            tau = tau[:self.model.nu]
-        elif len(tau) < self.model.nu:
-            temp = np.zeros(self.model.nu)
-            temp[:len(tau)] = tau
-            tau = temp
-        
-        # Torque limits (if available)
-        if hasattr(self.model, 'actuator_forcerange') and self.model.actuator_forcerange is not None:
-            tau_max = self.model.actuator_forcerange[:, 1]
-            tau_min = self.model.actuator_forcerange[:, 0]
-            tau = np.clip(tau, tau_min, tau_max)
-        
-        if self.verbose and time % 1.0 < dt:  # Print roughly every second
+
+
+        if self.verbose and time % 1.0 < dt:
             print(f"[AC] t={time:.2f} | "
-                  f"F_err: [{force_error[0]:.1f}, {force_error[1]:.1f}, {force_error[2]:.1f}] | "
-                  f"||tau||: {np.linalg.norm(tau):.2f} | "
-                  f"x_adm: [{self.x_adm[0]:.3f}, {self.x_adm[1]:.3f}, {self.x_adm[2]:.3f}]")
-        
+                f"F_err: [{force_error[0]:.1f}, {force_error[1]:.1f}, {force_error[2]:.1f}] | "
+                f"||tau||: {np.linalg.norm(tau):.2f} | "
+                f"x_adm: [{self.x_adm[0]:.3f}, {self.x_adm[1]:.3f}, {self.x_adm[2]:.3f}]"
+                f"||J||: {np.linalg.norm(J):.4e}, rank: {np.linalg.matrix_rank(J)}")
+
         return tau, self.force_measured
-    
+
     def reset(self):
         """Reset controller state"""
         self.x_adm = None
@@ -321,14 +230,17 @@ class AdmittanceController:
         
         # Position tracking
         plt.subplot(4, 1, 2)
-        if "position" in log and len(log["position"]) > 0:
-            for i, label in enumerate(['X', 'Y', 'Z']):
-                plt.plot(log["time"], np.array(log["position"])[:, i], label=f'{label} Position')
+        labels = ['X', 'Y', 'Z']
+        for i in range(3):
+            plt.plot(log["time"], log["position"][:, i], label=f'{labels[i]} Admittance')
+            plt.plot(log["time"], log["measured_position"][:, i], '--', label=f'{labels[i]} Measured')
+            plt.plot(log["time"], log["x_ref"][:, i], ':', label=f'{labels[i]} Ref')
+
         plt.ylabel("Position (m)")
         plt.grid(True)
-        plt.legend()
-        plt.title("End-Effector Position")
-        
+        plt.legend(loc='upper right', ncol=3)
+        plt.title("End-Effector Position: Admittance vs Measured vs Reference")
+
         # Joint velocities
         plt.subplot(4, 1, 3)
         if len(log["vel"]) > 0:

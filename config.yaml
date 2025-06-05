@@ -10,18 +10,17 @@ admittance_controller:
   M: [10.0, 10.0, 10.0, 0.1, 0.1, 0.1]
   B: [20.0, 20.0, 20.0, 5.0, 5.0, 5.0]
   K: [100.0, 100.0, 100.0, 10.0, 10.0, 10.0]
-  Kp: 2000.0
-  Kd: 20.0
+  Kp: 20.0
+  Kd: 10.0
   use_contact_forces: false
-  contact_geom_ids: []
+  contact_geom_ids: [attachment_site]
 
 trajectory:
   type: "quarter_circle"
   quarter_circle:
-    center: [0.4, 0.0, 0.4]   # center of the quarter circle
-    radius: 0.1               # radius in meters
-    frequency: 0.2            # 1 cycle every 5 seconds
+    center: [0.6, 0.0, 0.5]   # center of the quarter circle
+    radius: 0.3              # radius in meters
+    frequency: 0.1            # 1 cycle every 5 seconds
 
 forces:
-  desired_force: [0.0, 0.0, -1.0, 0.0, 0.0, 0.0]
-  force_ramp_time: 2.0
+  desired_force: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
