@@ -24,8 +24,7 @@ def plot_results(log):
     plt.grid(True)
 
     plt.subplot(2, 1, 2)
-    plt.plot(log["time"], log["applied_force"][:, 2], label="Applied Z Force")
-    plt.plot(log["time"], log["measured_force"][:, 2], label="Measured Z Force")
+    plt.plot(log["time"], log["applied_force"][:, 2], label="Applied External Z Force")
     plt.ylabel("Force (N)")
     plt.xlabel("Time (s)")
     plt.grid(True)
@@ -65,7 +64,7 @@ def run():
 
     dt = config["simulation"]["dt"]
     duration = config["simulation"]["duration"]
-    log = {"time": [], "force": [], "vel": [], "position":[], "measured_force": [], "applied_force": [], "measured_position": [], "x_ref": []}
+    log = {"time": [], "force": [], "vel": [], "position":[], "applied_force": [], "measured_position": [], "x_ref": []}
 
     site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, config["simulation"]["site_name"])
     body_id = model.site_bodyid[site_id]
@@ -75,7 +74,6 @@ def run():
         while viewer.is_running() and time.time() - t0 < duration:
             t = time.time() - t0
             controller.set_external_force(config["forces"]["external_force"],t)
-            data.xfrc_applied[body_id][:] = np.array([0, 0, 0, 0, 0, 0])
             tau = controller.compute_torques(t, dt)
             data.ctrl[:] = tau
             mujoco.mj_step(model, data)
@@ -85,7 +83,6 @@ def run():
             log["force"].append(controller.external_force.copy())
             log["vel"].append(data.qvel.copy())
             log["position"].append(controller.x[:3].copy())
-            log["measured_force"].append(data.cfrc_ext[body_id].copy())
             log["applied_force"].append(controller.external_force.copy())
 
             _, _, pose_meas = controller.get_current_pose()
@@ -99,7 +96,6 @@ def run():
     log["vel"] = np.vstack(log["vel"]) if log["vel"] else np.array([])
     log["position"] = np.array(log["position"])
     log["applied_force"] = np.vstack(log["applied_force"])
-    log["measured_force"] = np.vstack(log["measured_force"])
     log["measured_position"] = np.array(log["measured_position"])
     log["x_ref"] = np.array(log["x_ref"])
 

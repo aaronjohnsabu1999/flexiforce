@@ -13,7 +13,7 @@ admittance_controller:
   Kd: 50.0
 
 forces:
-  external_force: [0, 0, 0, 0, 0, 0]
+  external_force: [0, 0, 10, 0, 0, 0]
 
 trajectory:
   type: "quarter_circle" 
