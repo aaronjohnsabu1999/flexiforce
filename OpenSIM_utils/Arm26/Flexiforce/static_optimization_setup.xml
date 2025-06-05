@@ -12,9 +12,9 @@
 		<!--Output precision.  It is 8 by default.-->
 		<output_precision>8</output_precision>
 		<!--Initial time for the simulation.-->
-		<initial_time>2</initial_time>
+		<initial_time>0.2613065326633166</initial_time>
 		<!--Final time for the simulation.-->
-		<final_time>2</final_time>
+		<final_time>0.2613065326633166</final_time>
 		<!--Flag indicating whether or not to compute equilibrium values for states other than the coordinates or speeds.  For example, equilibrium muscle fiber lengths or muscle forces.-->
 		<solve_for_equilibrium_for_auxiliary_states>false</solve_for_equilibrium_for_auxiliary_states>
 		<!--Maximum number of integrator steps.-->
@@ -32,9 +32,9 @@
 					<!--Flag (true or false) specifying whether on. True by default.-->
 					<on>true</on>
 					<!--Start time.-->
-					<start_time>2</start_time>
+					<start_time>0.2613065326633166</start_time>
 					<!--End time.-->
-					<end_time>2</end_time>
+					<end_time>0.2613065326633166</end_time>
 					<!--Specifies how often to store results during a simulation. More specifically, the interval (a positive integer) specifies how many successful integration steps should be taken before results are recorded again.-->
 					<step_interval>1</step_interval>
 					<!--Flag (true or false) indicating whether the results are in degrees or not.-->
@@ -59,7 +59,7 @@
 			<groups />
 		</ControllerSet>
 		<!--XML file (.xml) containing the forces applied to the model as ExternalLoads.-->
-		<external_loads_file />
+		<external_loads_file>C:\Users\saman\OneDrive\Documents\GitHub\flexiforce\OpenSIM_utils\Arm26\Flexiforce\robot_force.xml</external_loads_file>
 		<!--Storage file (.sto) containing the time history of states for the model. This file often contains multiple rows of data, each row being a time-stamped array of states. The first column contains the time.  The rest of the columns contain the states in the order appropriate for the model. In a storage file, unlike a motion file (.mot), non-uniform time spacing is allowed.  If the user-specified initial time for a simulation does not correspond exactly to one of the time stamps in this file, interpolation is NOT used because it is sometimes necessary to use an exact set of states for analyses.  Instead, the closest earlier set of states is used.-->
 		<states_file />
 		<!--Motion file (.mot) or storage file (.sto) containing the time history of the generalized coordinates for the model. These can be specified in place of the states file.-->

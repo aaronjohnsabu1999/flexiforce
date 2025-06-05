@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<OpenSimDocument Version="40000">
+<OpenSimDocument Version="40500">
 	<Model name="arm26">
 		<!--The model's ground reference frame.-->
 		<Ground name="ground">
@@ -41,6 +41,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -56,6 +58,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -71,6 +75,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -86,6 +92,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -101,6 +109,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -116,6 +126,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -137,6 +149,20 @@
 								<translation>-0.043905 -0.0038999999999999998 0.14779999999999999</translation>
 								<!--The name of quadrant over which the wrap object is active. For example, '+x' or '-y' to set the sidedness of the wrapping.-->
 								<quadrant>x</quadrant>
+								<!--Default appearance for this Geometry-->
+								<Appearance>
+									<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+									<visible>true</visible>
+									<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
+									<opacity>0.5</opacity>
+									<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
+									<color>0 1 1</color>
+									<!--Visuals applied to surfaces associated with this Appearance.-->
+									<SurfaceProperties>
+										<!--The representation (1:Points, 2:Wire, 3:Shaded) used to display the object.-->
+										<representation>3</representation>
+									</SurfaceProperties>
+								</Appearance>
 								<!--The radius of the cylinder.-->
 								<radius>0.0030000000000000001</radius>
 								<!--The length of the cylinder.-->
@@ -169,6 +195,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -190,6 +218,20 @@
 								<translation>-0.0077999999999999996 -0.0041000000000000003 -0.0014</translation>
 								<!--The name of quadrant over which the wrap object is active. For example, '+x' or '-y' to set the sidedness of the wrapping.-->
 								<quadrant>z</quadrant>
+								<!--Default appearance for this Geometry-->
+								<Appearance>
+									<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+									<visible>true</visible>
+									<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
+									<opacity>0.5</opacity>
+									<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
+									<color>0 1 1</color>
+									<!--Visuals applied to surfaces associated with this Appearance.-->
+									<SurfaceProperties>
+										<!--The representation (1:Points, 2:Wire, 3:Shaded) used to display the object.-->
+										<representation>3</representation>
+									</SurfaceProperties>
+								</Appearance>
 								<!--The length of the radii of the ellipsoid.-->
 								<dimensions>0.035000000000000003 0.02 0.02</dimensions>
 							</WrapEllipsoid>
@@ -202,6 +244,20 @@
 								<translation>0.0033 0.0073000000000000001 0.00029999999999999997</translation>
 								<!--The name of quadrant over which the wrap object is active. For example, '+x' or '-y' to set the sidedness of the wrapping.-->
 								<quadrant>-y</quadrant>
+								<!--Default appearance for this Geometry-->
+								<Appearance>
+									<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+									<visible>true</visible>
+									<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
+									<opacity>0.5</opacity>
+									<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
+									<color>0 1 1</color>
+									<!--Visuals applied to surfaces associated with this Appearance.-->
+									<SurfaceProperties>
+										<!--The representation (1:Points, 2:Wire, 3:Shaded) used to display the object.-->
+										<representation>3</representation>
+									</SurfaceProperties>
+								</Appearance>
 								<!--The length of the radii of the ellipsoid.-->
 								<dimensions>0.025000000000000001 0.02 0.02</dimensions>
 							</WrapEllipsoid>
@@ -214,6 +270,20 @@
 								<translation>0.0028 -0.29189999999999999 -0.0068999999999999999</translation>
 								<!--The name of quadrant over which the wrap object is active. For example, '+x' or '-y' to set the sidedness of the wrapping.-->
 								<quadrant>all</quadrant>
+								<!--Default appearance for this Geometry-->
+								<Appearance>
+									<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+									<visible>true</visible>
+									<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
+									<opacity>0.5</opacity>
+									<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
+									<color>0 1 1</color>
+									<!--Visuals applied to surfaces associated with this Appearance.-->
+									<SurfaceProperties>
+										<!--The representation (1:Points, 2:Wire, 3:Shaded) used to display the object.-->
+										<representation>3</representation>
+									</SurfaceProperties>
+								</Appearance>
 								<!--The radius of the cylinder.-->
 								<radius>0.016</radius>
 								<!--The length of the cylinder.-->
@@ -246,6 +316,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -261,6 +333,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -276,6 +350,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -291,6 +367,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -306,6 +384,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -321,6 +401,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -336,6 +418,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -351,6 +435,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -366,6 +452,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -381,6 +469,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -396,6 +486,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -411,6 +503,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -426,6 +520,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -441,6 +537,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -456,6 +554,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -471,6 +571,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -486,6 +588,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -501,6 +605,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -516,6 +622,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -531,6 +639,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -546,6 +656,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -561,6 +673,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -576,6 +690,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -591,6 +707,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -606,6 +724,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -621,6 +741,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -636,6 +758,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -651,6 +775,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -666,6 +792,8 @@
 							<scale_factors>1 1 1</scale_factors>
 							<!--Default appearance attributes for this Geometry-->
 							<Appearance>
+								<!--Flag indicating whether the associated Geometry is visible or hidden.-->
+								<visible>true</visible>
 								<!--The opacity used to display the geometry between 0:transparent, 1:opaque.-->
 								<opacity>1</opacity>
 								<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
@@ -992,8 +1120,13 @@
 				<Thelen2003Muscle name="TRIlong">
 					<!--Flag indicating whether the force is applied or not. If true the forceis applied to the MultibodySystem otherwise the force is not applied.NOTE: Prior to OpenSim 4.0, this behavior was controlled by the 'isDisabled' property, where 'true' meant that force was not being applied. Thus, if 'isDisabled' is true, then 'appliesForce` is false.-->
 					<appliesForce>true</appliesForce>
-					<!--The set of points defining the path of the actuator.-->
-					<GeometryPath name="geometrypath">
+					<!--The path of the actuator which defines length and lengthening speed.-->
+					<GeometryPath name="path">
+						<!--Default appearance attributes for this AbstractGeometryPath.-->
+						<Appearance>
+							<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
+							<color>0.80000000000000004 0.10000000000000001 0.10000000000000001</color>
+						</Appearance>
 						<!--The set of points defining the path-->
 						<PathPointSet>
 							<objects>
@@ -1060,11 +1193,6 @@
 							</objects>
 							<groups />
 						</PathWrapSet>
-						<!--Default appearance attributes for this GeometryPath-->
-						<Appearance>
-							<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
-							<color>0.80000000000000004 0.10000000000000001 0.10000000000000001</color>
-						</Appearance>
 					</GeometryPath>
 					<!--The maximum force this actuator can produce.-->
 					<optimal_force>1</optimal_force>
@@ -1098,8 +1226,13 @@
 				<Thelen2003Muscle name="TRIlat">
 					<!--Flag indicating whether the force is applied or not. If true the forceis applied to the MultibodySystem otherwise the force is not applied.NOTE: Prior to OpenSim 4.0, this behavior was controlled by the 'isDisabled' property, where 'true' meant that force was not being applied. Thus, if 'isDisabled' is true, then 'appliesForce` is false.-->
 					<appliesForce>true</appliesForce>
-					<!--The set of points defining the path of the actuator.-->
-					<GeometryPath name="geometrypath">
+					<!--The path of the actuator which defines length and lengthening speed.-->
+					<GeometryPath name="path">
+						<!--Default appearance attributes for this AbstractGeometryPath.-->
+						<Appearance>
+							<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
+							<color>0.80000000000000004 0.10000000000000001 0.10000000000000001</color>
+						</Appearance>
 						<!--The set of points defining the path-->
 						<PathPointSet>
 							<objects>
@@ -1150,11 +1283,6 @@
 							</objects>
 							<groups />
 						</PathWrapSet>
-						<!--Default appearance attributes for this GeometryPath-->
-						<Appearance>
-							<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
-							<color>0.80000000000000004 0.10000000000000001 0.10000000000000001</color>
-						</Appearance>
 					</GeometryPath>
 					<!--The maximum force this actuator can produce.-->
 					<optimal_force>1</optimal_force>
@@ -1188,8 +1316,13 @@
 				<Thelen2003Muscle name="TRImed">
 					<!--Flag indicating whether the force is applied or not. If true the forceis applied to the MultibodySystem otherwise the force is not applied.NOTE: Prior to OpenSim 4.0, this behavior was controlled by the 'isDisabled' property, where 'true' meant that force was not being applied. Thus, if 'isDisabled' is true, then 'appliesForce` is false.-->
 					<appliesForce>true</appliesForce>
-					<!--The set of points defining the path of the actuator.-->
-					<GeometryPath name="geometrypath">
+					<!--The path of the actuator which defines length and lengthening speed.-->
+					<GeometryPath name="path">
+						<!--Default appearance attributes for this AbstractGeometryPath.-->
+						<Appearance>
+							<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
+							<color>0.80000000000000004 0.10000000000000001 0.10000000000000001</color>
+						</Appearance>
 						<!--The set of points defining the path-->
 						<PathPointSet>
 							<objects>
@@ -1240,11 +1373,6 @@
 							</objects>
 							<groups />
 						</PathWrapSet>
-						<!--Default appearance attributes for this GeometryPath-->
-						<Appearance>
-							<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
-							<color>0.80000000000000004 0.10000000000000001 0.10000000000000001</color>
-						</Appearance>
 					</GeometryPath>
 					<!--The maximum force this actuator can produce.-->
 					<optimal_force>1</optimal_force>
@@ -1278,8 +1406,13 @@
 				<Thelen2003Muscle name="BIClong">
 					<!--Flag indicating whether the force is applied or not. If true the forceis applied to the MultibodySystem otherwise the force is not applied.NOTE: Prior to OpenSim 4.0, this behavior was controlled by the 'isDisabled' property, where 'true' meant that force was not being applied. Thus, if 'isDisabled' is true, then 'appliesForce` is false.-->
 					<appliesForce>true</appliesForce>
-					<!--The set of points defining the path of the actuator.-->
-					<GeometryPath name="geometrypath">
+					<!--The path of the actuator which defines length and lengthening speed.-->
+					<GeometryPath name="path">
+						<!--Default appearance attributes for this AbstractGeometryPath.-->
+						<Appearance>
+							<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
+							<color>0.80000000000000004 0.10000000000000001 0.10000000000000001</color>
+						</Appearance>
 						<!--The set of points defining the path-->
 						<PathPointSet>
 							<objects>
@@ -1354,11 +1487,6 @@
 							</objects>
 							<groups />
 						</PathWrapSet>
-						<!--Default appearance attributes for this GeometryPath-->
-						<Appearance>
-							<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
-							<color>0.80000000000000004 0.10000000000000001 0.10000000000000001</color>
-						</Appearance>
 					</GeometryPath>
 					<!--The maximum force this actuator can produce.-->
 					<optimal_force>1</optimal_force>
@@ -1392,8 +1520,13 @@
 				<Thelen2003Muscle name="BICshort">
 					<!--Flag indicating whether the force is applied or not. If true the forceis applied to the MultibodySystem otherwise the force is not applied.NOTE: Prior to OpenSim 4.0, this behavior was controlled by the 'isDisabled' property, where 'true' meant that force was not being applied. Thus, if 'isDisabled' is true, then 'appliesForce` is false.-->
 					<appliesForce>true</appliesForce>
-					<!--The set of points defining the path of the actuator.-->
-					<GeometryPath name="geometrypath">
+					<!--The path of the actuator which defines length and lengthening speed.-->
+					<GeometryPath name="path">
+						<!--Default appearance attributes for this AbstractGeometryPath.-->
+						<Appearance>
+							<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
+							<color>0.80000000000000004 0.10000000000000001 0.10000000000000001</color>
+						</Appearance>
 						<!--The set of points defining the path-->
 						<PathPointSet>
 							<objects>
@@ -1441,11 +1574,6 @@
 							<objects />
 							<groups />
 						</PathWrapSet>
-						<!--Default appearance attributes for this GeometryPath-->
-						<Appearance>
-							<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
-							<color>0.80000000000000004 0.10000000000000001 0.10000000000000001</color>
-						</Appearance>
 					</GeometryPath>
 					<!--The maximum force this actuator can produce.-->
 					<optimal_force>1</optimal_force>
@@ -1479,8 +1607,13 @@
 				<Thelen2003Muscle name="BRA">
 					<!--Flag indicating whether the force is applied or not. If true the forceis applied to the MultibodySystem otherwise the force is not applied.NOTE: Prior to OpenSim 4.0, this behavior was controlled by the 'isDisabled' property, where 'true' meant that force was not being applied. Thus, if 'isDisabled' is true, then 'appliesForce` is false.-->
 					<appliesForce>true</appliesForce>
-					<!--The set of points defining the path of the actuator.-->
-					<GeometryPath name="geometrypath">
+					<!--The path of the actuator which defines length and lengthening speed.-->
+					<GeometryPath name="path">
+						<!--Default appearance attributes for this AbstractGeometryPath.-->
+						<Appearance>
+							<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
+							<color>0.80000000000000004 0.10000000000000001 0.10000000000000001</color>
+						</Appearance>
 						<!--The set of points defining the path-->
 						<PathPointSet>
 							<objects>
@@ -1513,11 +1646,6 @@
 							</objects>
 							<groups />
 						</PathWrapSet>
-						<!--Default appearance attributes for this GeometryPath-->
-						<Appearance>
-							<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
-							<color>0.80000000000000004 0.10000000000000001 0.10000000000000001</color>
-						</Appearance>
 					</GeometryPath>
 					<!--The maximum force this actuator can produce.-->
 					<optimal_force>1</optimal_force>
@@ -1583,7 +1711,28 @@
 		</MarkerSet>
 		<!--Geometry to be used in contact forces.-->
 		<ContactGeometrySet name="contactgeometryset">
-			<objects />
+			<objects>
+				<ContactSphere name="Robot_Contact">
+					<!--Path to a Component that satisfies the Socket 'frame' of type PhysicalFrame (description: The frame to which this geometry is attached.).-->
+					<socket_frame>/bodyset/r_ulna_radius_hand</socket_frame>
+					<!--Location of geometry center in the PhysicalFrame.-->
+					<location>0.01164885149046313 -0.28063458204269409 0.068840742111206055</location>
+					<!--Orientation of geometry in the PhysicalFrame (body-fixed XYZ Euler angles).-->
+					<orientation>-0 0 -0</orientation>
+					<!--Default appearance for this Geometry-->
+					<Appearance>
+						<!--The color, (red, green, blue), [0, 1], used to display the geometry. -->
+						<color>0 1 1</color>
+						<!--Visuals applied to surfaces associated with this Appearance.-->
+						<SurfaceProperties>
+							<!--The representation (1:Points, 2:Wire, 3:Shaded) used to display the object.-->
+							<representation>3</representation>
+						</SurfaceProperties>
+					</Appearance>
+					<!--Radius of the sphere (default: 0).-->
+					<radius>0.0099999997764825821</radius>
+				</ContactSphere>
+			</objects>
 			<groups />
 		</ContactGeometrySet>
 		<!--Probes in the model.-->

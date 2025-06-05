@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<OpenSimDocument Version="40600">
+	<ExternalForce>
+		<!--Flag indicating whether the force is applied or not. If true the forceis applied to the MultibodySystem otherwise the force is not applied.NOTE: Prior to OpenSim 4.0, this behavior was controlled by the 'isDisabled' property, where 'true' meant that force was not being applied. Thus, if 'isDisabled' is true, then 'appliesForce` is false.-->
+		<appliesForce>true</appliesForce>
+		<!--Name of the body the force is applied to.-->
+		<applied_to_body>/bodyset/r_ulna_radius_hand</applied_to_body>
+		<!--Name of the body the force is expressed in (default is ground).-->
+		<force_expressed_in_body>ground</force_expressed_in_body>
+		<!--Name of the body the point is expressed in (default is ground).-->
+		<point_expressed_in_body>ground</point_expressed_in_body>
+		<!--Identifier (string) to locate the force to be applied in the data source.-->
+		<force_identifier>r_ulna_radius_hand_force_v</force_identifier>
+		<!--Identifier (string) to locate the point to be applied in the data source.-->
+		<point_identifier>r_ulna_radius_hand_force_p</point_identifier>
+		<!--Name of the data source (Storage) that will supply the force data.-->
+		<data_source_name>C:\Users\saman\OneDrive\Documents\GitHub\flexiforce\OpenSIM_utils\Arm26\Flexiforce\robot_force.sto</data_source_name>
+	</ExternalForce>
+</OpenSimDocument>

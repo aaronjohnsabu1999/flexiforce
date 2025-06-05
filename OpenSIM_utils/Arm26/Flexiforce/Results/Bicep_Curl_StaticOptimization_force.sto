@@ -13,4 +13,4 @@ If the header above contains a line with 'inDegrees', this indicates whether rot
 
 endheader
 time	TRIlong	TRIlat	TRImed	BIClong	BICshort	BRA
-      2.00000000	      5.81928843	     50.86104371	     51.34335147	    101.05828513	      3.60945925	      7.06610454
+      0.26130653	      7.99575770	      5.01314528	      4.66432244	     25.32981367	      7.21981854	     11.56455981
