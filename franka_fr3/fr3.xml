@@ -138,7 +138,7 @@
                       <geom mesh="link7_3" material="black" class="visual"/>
                       <geom name="fr3_link7_collision" class="collision" mesh="link7_coll"/>
                       <site name="attachment_site" pos="0 0 0.107"/>
-                      <body name="tool" pos="0 0 0.107" > <!-- Position relative to attachment_site -->
+                      <body name="tool" pos="0 0 0.107" quat="0.7071 0 0 0.7071"> <!-- Position relative to attachment_site -->
                         <inertial pos="0 0 0.05" mass="0.1" diaginertia="0.001 0.001 0.001"/>
                         <geom name="tool" mesh="tool_visual" material="gray" class="visual"/>
                       </body>

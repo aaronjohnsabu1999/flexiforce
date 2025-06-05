@@ -1,7 +1,0 @@
-[tool.black]
-exclude = '''
-/(
-    venv
-  | mujoco_menagerie
-)/
-'''
