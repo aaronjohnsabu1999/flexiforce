@@ -49,6 +49,22 @@ class Bicep_Curl:
         self.analyzer.setModelFilename(self.model.getDocumentFileName())
         self.analyzer.setCoordinatesFileName(self.traj_path)
         self.analyzer.setName("Bicep_Curl")
+
+        #Initialize External Load
+        x = np.zeros(self.t.shape)
+        y = np.zeros(self.t.shape)
+        z = np.zeros(self.t.shape)
+        fx = np.zeros(self.t.shape)
+        fy = np.zeros(self.t.shape)
+        fz = np.zeros(self.t.shape)
+        self.ext_load = {
+            "r_ulna_radius_hand_force_vx": fx,
+            "r_ulna_radius_hand_force_vy": fy,
+            "r_ulna_radius_hand_force_vz": fz,
+            "r_ulna_radius_hand_force_px": x, 
+            "r_ulna_radius_hand_force_py": y, 
+            "r_ulna_radius_hand_force_pz": z,
+        }
         
         
         
@@ -63,82 +79,48 @@ class Bicep_Curl:
         returns: computed biceps activation for this external force
         '''
         #Set time of step in Static Optimizer/Tools
+        self.step_index = step_index
         t = self.t[step_index]
         self.optimizer.setStartTime(t)
         self.optimizer.setEndTime(t)
         self.analyzer.setStartTime(t)
         self.analyzer.setFinalTime(t)
-
+    
         # Create State object from the shoulder and elbow coordinates at the step_index
         data = osim.Vector.createFromMat(np.asarray([0.0, self.elbow_trajectory[step_index]]))
         state = self.model.initSystem()
-        #print(state.getSystemTopologyStageVersion())
         state.setQ(data)
-        #print(state.getSystemTopologyStageVersion())
-        
-        
-        
-    
+        self.model.assemble(state)
 
-
-
-
-
-
-        #state.setTime(t)
-        
-        #state.setQ(0, osim.Vector.createFromMat(np.asarray([0.0]))) #0 index corresponds to shoulder 
-        #state.setQ(1, osim.Vector.createFromMat(self.elbow_trajectory[step_index])) #1 index corresponds to elbow joint
-
-        #state.setTime(t)    
-        #self.analyzer.setStatesFromMotion(state, osim.Storage(self.traj_path), False)
-        #state_traj = self.analyzer.getStatesStorage()
-        #osim.Stat
-
-        #state = osim.StateVector()
-        #
-        #state.setStates(aT= t, data = data)
-        
-        
-        
-
-        # Initialize force/position vectors 
-        x = np.zeros(self.t.shape)
-        y = np.zeros(self.t.shape)
-        z = np.zeros(self.t.shape)
-        fx = np.zeros(self.t.shape)
-        fy = np.zeros(self.t.shape)
-        fz = np.zeros(self.t.shape)
-
-        #create 
+        #Get Transformation Matrix between ground and r_ulna_radius_hand frames
         for frame in self.model.getFrameList():
             if frame.getName() != "r_ulna_radius_hand":
                 continue
-            print('a')
-            x[step_index] = frame.getPositionInGround(state)[0] + 0.011649
-            y[step_index] = frame.getPositionInGround(state)[1] - 0.280635
-            z[step_index] = frame.getPositionInGround(state)[2] + 0.068841
+            T_GR = frame.getTransformInGround(state)
+
+        #Get contact point position in r_ulna_radius_hand frame
+        for ctc_geom in self.model.get_ContactGeometrySet():
+            if ctc_geom.getName() != "Robot_Contact":
+                continue
+            V_R = ctc_geom.getLocation()
+
+        #set position of contact geometry in ground frame during step_index
+        V_G = T_GR.shiftFrameStationToBase(V_R)
+        self.ext_load["r_ulna_radius_hand_force_px"][step_index] = V_G[0]
+        self.ext_load["r_ulna_radius_hand_force_py"][step_index] = V_G[1]
+        self.ext_load["r_ulna_radius_hand_force_pz"][step_index] = V_G[2]
         
-        print('b')
-        #Make XML file for the time step
-        fx[step_index] = force_vector[0]
-        fy[step_index] = force_vector[1]
-        fz[step_index] = force_vector[2]
-        ext_load = {
-            "r_ulna_radius_hand_force_vx": fx,
-            "r_ulna_radius_hand_force_vy": fy,
-            "r_ulna_radius_hand_force_vz": fz,
-            "r_ulna_radius_hand_force_px": x, 
-            "r_ulna_radius_hand_force_py": y, 
-            "r_ulna_radius_hand_force_pz": z,
-        }
-        ext_load = self.make_XML(ext_load)
+        #Set Robot Force during step_index, make XML
+        self.ext_load["r_ulna_radius_hand_force_vx"][step_index] = force_vector[0]
+        self.ext_load["r_ulna_radius_hand_force_vy"][step_index] = force_vector[1]
+        self.ext_load["r_ulna_radius_hand_force_vz"][step_index] = force_vector[2]
+        self.make_XML(self.ext_load)
         
         #Setup step analyzer
-        #state = self.model.initSystem() #reset state now that we're done with it
         self.step_analysis = self.analyzer.clone()
         self.step_analysis.updAnalysisSet().cloneAndAppend(self.optimizer)
         self.step_analysis.setExternalLoadsFileName(self.force_path_xml)
+        #self.step_analysis.setExternalLoads(self.force_path_xml)
         self.step_analysis.setResultsDir(self.repo_path + self.base_path + "Results")
         self.step_analysis.printToXML(self.base_path + "static_optimization_setup.xml")
 
@@ -191,9 +173,20 @@ class Bicep_Curl:
         for body in self.model.getBodyList():
             if body.getName() != "r_ulna_radius_hand":
                 continue
-            force.set_applied_to_body(body.getAbsolutePathString())
+            force.set_applied_to_body(body.getName())
         
+        #load = osim.ExternalLoads()
+        #load.setDataFileName(self.force_path_sto)
+        #load.addComponent(force)
+        
+        #self.model.addForce(force)
+        #self.model.finalizeConnections()
+        
+        #load.printToXML(self.force_path_xml)
         force.printToXML(self.force_path_xml)
+        #self.model.initSystem()
+        #self.model.addForce(force)
+        #self.model.finalizeConnections()
 
 
 

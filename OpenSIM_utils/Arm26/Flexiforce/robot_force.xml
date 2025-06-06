@@ -4,7 +4,7 @@
 		<!--Flag indicating whether the force is applied or not. If true the forceis applied to the MultibodySystem otherwise the force is not applied.NOTE: Prior to OpenSim 4.0, this behavior was controlled by the 'isDisabled' property, where 'true' meant that force was not being applied. Thus, if 'isDisabled' is true, then 'appliesForce` is false.-->
 		<appliesForce>true</appliesForce>
 		<!--Name of the body the force is applied to.-->
-		<applied_to_body>/bodyset/r_ulna_radius_hand</applied_to_body>
+		<applied_to_body>r_ulna_radius_hand</applied_to_body>
 		<!--Name of the body the force is expressed in (default is ground).-->
 		<force_expressed_in_body>ground</force_expressed_in_body>
 		<!--Name of the body the point is expressed in (default is ground).-->
