@@ -1,106 +1,70 @@
-# controller.py
 import numpy as np
 import mujoco
+from scipy.spatial.transform import Rotation as R
 
-
-class Controller:
-    def __init__(self, model, data, site_name, verbose=False):
+class AdmittanceController:
+    def __init__(self, model, data, site_name, M, B, K, Kp, Kd):
         self.model = model
         self.data = data
-        self.site_id = model.site(site_name).id
-        self.dt = 0.01
-        self.verbose = verbose
-        self.force = np.zeros(3)
-        self.target_mvc = 0.0
+        self.M = M
+        self.B = B
+        self.K = K
+        self.Kp = Kp
+        self.Kd = Kd
+        self.site_name = site_name
 
-    def set_force(self, f_ext, target_mvc=None):
-        self.force = np.array(f_ext)
-        if target_mvc is not None:
-            self.target_mvc = target_mvc
+        self.site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, site_name)
 
-    def compute_torques(self, *args, **kwargs):
-        raise NotImplementedError("Subclasses must implement compute_torques")
+        self.x = np.zeros(6)
+        self.xd = np.zeros(6)
+        self.xdd = np.zeros(6)
+        # self.force_measured = np.zeros(6)
+        self.external_force = np.zeros(6)
 
+        self.traj_func = None
+        self.vel_func = None
 
-class ParallelForceMotionController(Controller):
-    def __init__(self, model, data, site_name, **kwargs):
-        super().__init__(model, data, site_name, **kwargs)
-        self.Kp = kwargs.get("Kp", 250.0)
-        self.Kd = kwargs.get("Kd", 5.0)
+    def set_external_force(self, force,t):
+        self.external_force = np.sin(t)*np.array(force) # TODO: ADD THE FORCE APPLIED by the EMG HERE
 
-    def compute_torques(self, *args, **kwargs):
-        x_goal = kwargs.get("x_goal", None)
-        dt = kwargs.get("dt", self.dt)
+    def set_trajectory(self, traj_func, vel_func):
+        self.traj_func = traj_func
+        self.vel_func = vel_func
 
+    def get_current_pose(self):
+        pos = self.data.site_xpos[self.site_id].copy()
+        mat = self.data.site_xmat[self.site_id].reshape((3, 3))
+        quat = R.from_matrix(mat).as_quat()
+        rotvec = R.from_quat(quat).as_rotvec()
+        return pos, quat, np.hstack([pos, rotvec])
+
+    def get_reference_at_time(self, t):
+        x_ref = np.array(self.traj_func(t))
+        xd_ref = np.array(self.vel_func(t))
+        return x_ref, xd_ref
+
+    def compute_torques(self, t, dt):
         mujoco.mj_forward(self.model, self.data)
-        x_curr = self.data.site_xpos[self.site_id]
-        dx = x_goal[:2] - x_curr[:2]
 
-        J_pos = np.zeros((3, self.model.nv))
-        mujoco.mj_jacSite(self.model, self.data, J_pos, None, self.site_id)
+        pos, quat, x_meas = self.get_current_pose()
+        x_ref, xd_ref = self.get_reference_at_time(t)
 
-        F = np.zeros(3)
-        F[:2] = self.Kp * dx
-        F[2] = self.force[2]
+        pos_err = x_meas - x_ref
+        vel_err = self.xd - xd_ref
 
-        tau = J_pos.T @ F - self.Kd * self.data.qvel
-        if self.verbose:
-            print(
-                f"[PFC] dx: {dx}, force: {self.force}, tau norm: {np.linalg.norm(tau):.2f}"
-            )
-        return tau, F
+        rhs = self.external_force - self.B @ vel_err - self.K @ pos_err
+        self.xdd = np.linalg.solve(self.M, rhs.reshape(-1, 1)).flatten()
 
+        self.xd += self.xdd * dt
+        self.x += self.xd * dt
 
-class AdmittanceController(Controller):
-    def __init__(self, model, data, site_name, *args, **kwargs):
-        verbose = kwargs.get("verbose", False)
-        super().__init__(model, data, site_name, verbose=verbose)
-        # Admittance parameters
-        self.M = kwargs.get("M", 1.0)  # Mass
-        self.B = kwargs.get("B", 50.0)  # Damping
-        self.K = kwargs.get("K", 0.0)  # Stiffness
+        Jp = np.zeros((3, self.model.nv))
+        Jr = np.zeros((3, self.model.nv))
+        mujoco.mj_jacSite(self.model, self.data, Jp, Jr, self.site_id)
+        J = np.vstack((Jp, Jr))
 
-        # Velocity control gains
-        self.Kp = kwargs.get("Kp", 100.0)  # Proportional gain
-        self.Kd = kwargs.get("Kd", 0.0)  # Derivative gain
+        qvel_des = np.linalg.pinv(J) @ self.xd
+        qvel_error = qvel_des - self.data.qvel
+        tau = self.Kp * qvel_error - self.Kd * self.data.qvel
 
-        # State
-        self.xd = np.zeros(3)
-        self.x = None
-        self.force = np.zeros(3)
-
-    def compute_torques(self, *args, **kwargs):
-        x_goal = kwargs.get("x_goal", None)
-        dt = kwargs.get("dt", self.dt)
-
-        mujoco.mj_forward(self.model, self.data)
-        x_now = self.data.site_xpos[self.site_id]
-
-        if self.x is None:
-            self.x = x_now.copy()
-
-        # Admittance dynamics: M ẍ + B ẋ + K x = F_ext
-        acc = (self.force - self.B * self.xd - self.K * (self.x - x_now)) / self.M
-        self.xd += acc * self.dt
-        self.x += self.xd * self.dt
-
-        # Safety: reset if velocity explodes
-        if np.any(np.abs(self.xd) > 1000.0):
-            print("⚠️ Warning: xd overflow — resetting to zero.")
-            self.xd[:] = 0.0
-
-        # Compute Jacobian
-        J_pos = np.zeros((3, self.model.nv))
-        mujoco.mj_jacSite(self.model, self.data, J_pos, None, self.site_id)
-
-        # Map Cartesian velocity to joint velocity
-        qvel_desired = np.linalg.pinv(J_pos) @ self.xd
-
-        # Velocity-level control in joint space
-        vel_error = qvel_desired - self.data.qvel
-        tau = self.Kp * vel_error - self.Kd * self.data.qvel
-        if self.verbose:
-            print(
-                f"[AC] x: {self.x}, xd: {self.xd}, force: {self.force}, tau norm: {np.linalg.norm(tau):.2f}"
-            )
-        return tau, self.force
+        return tau
