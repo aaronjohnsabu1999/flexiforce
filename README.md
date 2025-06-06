@@ -130,7 +130,7 @@ python3 main.py
 
 - ✅ GUI will open via Tkinter
 - ✅ MuJoCo viewer will render (if OpenGL works)
-- 🔁 Headless fallback if viewer fails
+- ✅ Headless fallback if viewer fails
 
 ## Troubleshooting
 

@@ -3,6 +3,8 @@ simulation:
   duration: 30.0
   dt: 0.01
   model_path: mujoco_menagerie/franka_fr3/fr3.xml
+  opensim_path: OpenSIM_utils/Arm26/arm26.osim
+  opensim_scale: -1.0
   controller: "AC"
   x_goal: [0.5, 0.5, 1.0, 1.57, 0.0, 0.0] 
   max_force: 50.0  # maximum possible voluntary contraction in Newtons

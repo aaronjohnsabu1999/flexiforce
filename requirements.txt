@@ -1,7 +1,7 @@
 numpy
 argparse
 pyyaml
-mujoco
+mujoco==2.3.7
 matplotlib
 pandas
 black
