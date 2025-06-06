@@ -65,8 +65,7 @@ class Bicep_Curl:
             "r_ulna_radius_hand_force_py": y, 
             "r_ulna_radius_hand_force_pz": z,
         }
-        
-        
+        self.make_XML()
         
 
     def step_simulation(self, step_index, force_vector):
@@ -85,6 +84,7 @@ class Bicep_Curl:
         self.optimizer.setEndTime(t)
         self.analyzer.setStartTime(t)
         self.analyzer.setFinalTime(t)
+        self.analyzer.createExternalLoads
     
         # Create State object from the shoulder and elbow coordinates at the step_index
         data = osim.Vector.createFromMat(np.asarray([0.0, self.elbow_trajectory[step_index]]))
@@ -110,17 +110,21 @@ class Bicep_Curl:
         self.ext_load["r_ulna_radius_hand_force_py"][step_index] = V_G[1]
         self.ext_load["r_ulna_radius_hand_force_pz"][step_index] = V_G[2]
         
-        #Set Robot Force during step_index, make XML
+        #Set Robot Force during step_index
         self.ext_load["r_ulna_radius_hand_force_vx"][step_index] = force_vector[0]
         self.ext_load["r_ulna_radius_hand_force_vy"][step_index] = force_vector[1]
         self.ext_load["r_ulna_radius_hand_force_vz"][step_index] = force_vector[2]
-        self.make_XML(self.ext_load)
+
+        #Write dictionary into .sto files with the force/point of force application at this timestep
+        OSIMtable = osim.TimeSeriesTable(self.t)
+        for key, value in self.ext_load.items():
+            OSIMtable.appendColumn(key, osim.Vector.createFromMat(value))
+        self.sto.write(OSIMtable, self.force_path_sto)
         
         #Setup step analyzer
         self.step_analysis = self.analyzer.clone()
         self.step_analysis.updAnalysisSet().cloneAndAppend(self.optimizer)
         self.step_analysis.setExternalLoadsFileName(self.force_path_xml)
-        #self.step_analysis.setExternalLoads(self.force_path_xml)
         self.step_analysis.setResultsDir(self.repo_path + self.base_path + "Results")
         self.step_analysis.printToXML(self.base_path + "static_optimization_setup.xml")
 
@@ -149,46 +153,33 @@ class Bicep_Curl:
         return OSIMtable
     
 
-    def make_XML(self, columns = dict):
+    def make_XML(self):
         '''
-        Helper function to make .xml & .sto files for the external load forces
+        Helper function to make .xml to instruction the simulation on where it can find the external loads
 
-        columns: dictionary with the dependent columns for the table object, independent column is self.t (time) as specified by init
+        Future TODO: Add error checking to make sure that the .sto file exists first and if it doesn't, make it (and by future I mean never lmao)
         '''
-        #create .sto files with the force
-        OSIMtable = osim.TimeSeriesTable(self.t)
-        for key, value in columns.items():
-            OSIMtable.appendColumn(key, osim.Vector.createFromMat(value))
-        self.sto.write(OSIMtable, self.force_path_sto)
-        
-        #Create ExternalForce & set XML file
+    
+        #Create ExternalForce 
         force = osim.ExternalForce()
-        force.set_data_source_name(self.force_path_sto)
+        force.set_data_source_name("Unassigned")
         force.set_force_identifier("r_ulna_radius_hand_force_v")
         force.set_point_identifier("r_ulna_radius_hand_force_p")
         force.set_force_expressed_in_body("ground")
         force.set_point_expressed_in_body("ground")
         force.set_appliesForce(True)
-        
+
         for body in self.model.getBodyList():
             if body.getName() != "r_ulna_radius_hand":
                 continue
             force.set_applied_to_body(body.getName())
         
-        #load = osim.ExternalLoads()
-        #load.setDataFileName(self.force_path_sto)
-        #load.addComponent(force)
-        
-        #self.model.addForce(force)
-        #self.model.finalizeConnections()
-        
-        #load.printToXML(self.force_path_xml)
-        force.printToXML(self.force_path_xml)
-        #self.model.initSystem()
-        #self.model.addForce(force)
-        #self.model.finalizeConnections()
-
-
+        #Create ExternalLoad, add force to it, and create the XML
+        load = osim.ExternalLoads()
+        load.cloneAndAppend(force)
+        load.setDataFileName(self.force_path_sto)
+        load.printToXML(self.force_path_xml)
+      
 
     def _traj(self):
         '''

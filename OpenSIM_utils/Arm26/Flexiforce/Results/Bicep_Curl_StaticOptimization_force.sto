@@ -1,7 +1,7 @@
 ModelForces
 version=1
 nRows=1
-nColumns=7
+nColumns=13
 inDegrees=no
 
 This file contains the forces exerted on a model during a simulation.
@@ -12,5 +12,5 @@ Units are S.I. units (second, meters, Newtons, ...)
 If the header above contains a line with 'inDegrees', this indicates whether rotational values are in degrees (yes) or radians (no).
 
 endheader
-time	TRIlong	TRIlat	TRImed	BIClong	BICshort	BRA
-      2.00000000	      5.81927444	     50.86533143	     51.34768023	    101.05590969	      3.60900101	      7.06611720
+time	TRIlong	TRIlat	TRImed	BIClong	BICshort	BRA	r_ulna_radius_hand_externalforce_Fx	r_ulna_radius_hand_externalforce_Fy	r_ulna_radius_hand_externalforce_Fz	r_ulna_radius_hand_externalforce_px	r_ulna_radius_hand_externalforce_py	r_ulna_radius_hand_externalforce_pz
+      2.00000000	      5.81685787	    154.11951021	    155.58211246	    337.22555846	      8.62663636	      7.04635239	      0.00000000	    -25.00000000	      0.00000000	      0.01164885	     -0.28063458	      0.06884074
