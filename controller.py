@@ -18,6 +18,7 @@ class AdmittanceController:
         self.bicep = Bicep_Curl(sps = sps, curl_time = curl_time)
         self.t, _ = self.bicep._traj()
         self.dt = 1/sps
+        self.activation_err = [desired_activation]
 
         self.site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, site_name)
 
@@ -41,8 +42,8 @@ class AdmittanceController:
         return F
     
     def set_K(self, simulated_activation, desired_activation, G):
-        activation_err = desired_activation - simulated_activation # this is an arbitrary control law for changing K
-        scale = (1 + G["G_p"]* activation_err + G["G_d"]*activation_err/self.dt)
+        self.activation_err.append(desired_activation - simulated_activation) # this is an arbitrary control law for changing K
+        scale = (1 + G["G_p"]*self.activation_err[-1] + G["G_d"]*(self.activation_err[-1] - self.activation_err[-2])/self.dt + G["G_i"]*sum(self.activation_err))
         K_new = self.K * scale
         return K_new
     
