@@ -30,6 +30,7 @@ def plot_results(log):
     plt.plot(log["time"], log["applied_force"][:, 0], label="Applied X Force")
     plt.plot(log["time"], log["applied_force"][:, 1], label="Applied Y Force")
     plt.plot(log["time"], log["applied_force"][:, 2], label="Applied Z Force")
+    #plt.yscale('log')
     plt.ylabel("Force (N)")
     plt.xlabel("Time (s)")
     plt.grid(True)
@@ -111,7 +112,6 @@ def run(G, sps = 100, curl_time = 10):
     log["measured_position"] = np.array(log["measured_position"])
     log["x_ref"] = np.array(log["x_ref"])
     log["desired_activation"] = np.array(log["desired_activation"])
-    print(log["simulated_activation"])
     log["simulated_activation"] = np.array(log["simulated_activation"])[:-1]#we assume a start with zero activation and need to throw away the last simulated activation to get indices to match
 
     plot_results(log)

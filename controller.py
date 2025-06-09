@@ -36,7 +36,7 @@ class AdmittanceController:
         self.vel_func = vel_func
 
     def force_on_patient(self, pos_err, K): 
-        F = pos_err @ K
+        F = -pos_err @ K
         return F
     
     def set_K(self, simulated_activation, desired_activation, G):
@@ -76,7 +76,7 @@ class AdmittanceController:
         
         self.K = self.set_K(self.simulated_activation, self.desired_activation, G)
 
-        external_force = -self.force_on_patient(pos_err, self.K) # we are updating the external force applied to the simulation as well
+        external_force = self.force_on_patient(pos_err, self.K) # we are updating the external force applied to the simulation as well
         self.simulated_activation = self.opensim_simulated_activation(index, external_force)[0]
 
         rhs = external_force - self.B @ vel_err - self.K @ pos_err
