@@ -1,7 +1,7 @@
 simulation:
   model_path: "franka_fr3/fr3.xml"      # Adjust path to your MuJoCo model
   site_name: "attachment_site"              
-  initial_qpos: [2.09, -1.19, -2.4, -2.22, 1.39, 0.687, -1.08]  # This is a decent starting position from trial and error
+  initial_qpos: [2.09, -1.19, -2.4, -2.22, 1.39, 0.687, -0.5]  # This is a decent starting position from trial and error
   #dt: 0.002
   #duration: 10.0
 

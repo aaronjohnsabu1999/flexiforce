@@ -2,6 +2,7 @@ import numpy as np
 import mujoco
 from Bicep import Bicep_Curl
 from scipy.spatial.transform import Rotation as R
+import opensim as osim
 
 class AdmittanceController:
     def __init__(self, model, data, site_name, M, B, K, Kp, Kd, desired_activation, sps = 100, curl_time = 10):
@@ -57,7 +58,13 @@ class AdmittanceController:
 
     def get_reference_at_time(self, index):
         t = self.t[index]
-        x_ref = np.array(self.traj_func(t))
+        
+        pos = osim.TimeSeriesTable(self.bicep.force_path_sto)
+        x = pos.getDependentColumn("r_ulna_radius_hand_force_px")
+        y = pos.getDependentColumn("r_ulna_radius_hand_force_py")
+        z = pos.getDependentColumn("r_ulna_radius_hand_force_pz")
+        x_ref = np.array([x[index], z[index], y[index], 0, 0, 0]) #z&y are flipped bcuz opensim flips them for some godforsaken reason
+
         xd_ref = np.array(self.vel_func(t))
         return x_ref, xd_ref
 
