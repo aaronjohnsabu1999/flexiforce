@@ -38,7 +38,7 @@ class AdmittanceController:
         self.vel_func = vel_func
 
     def force_on_patient(self, pos_err, K): 
-        F = -pos_err @ K
+        F = -pos_err @ K  #F = -kx
         return F
     
     def set_K(self, simulated_activation, desired_activation, G):
@@ -64,7 +64,12 @@ class AdmittanceController:
         x = pos.getDependentColumn("r_ulna_radius_hand_force_px")
         y = pos.getDependentColumn("r_ulna_radius_hand_force_py")
         z = pos.getDependentColumn("r_ulna_radius_hand_force_pz")
-        x_ref = np.array([x[index], z[index], y[index], 0, 0, 0]) #z&y are flipped bcuz opensim flips them for some godforsaken reason
+
+        #at the end of the exercise, you're done moving against the virtual spring
+        if index == len(self.t) - 1:
+            x_ref = np.array([x[index], z[index], y[index], 0, 0, 0]) #z&y are flipped bcuz opensim flips them for some godforsaken reason
+        else:
+            x_ref = np.array([x[index+1], z[index+1], y[index+1], 0, 0, 0]) #z&y are flipped bcuz opensim flips them for some godforsaken reason
 
         xd_ref = np.array(self.vel_func(t))
         return x_ref, xd_ref
@@ -73,21 +78,27 @@ class AdmittanceController:
 
         mujoco.mj_forward(self.model, self.data)
 
-        pos, quat, x_meas = self.get_current_pose()
-        x_ref, xd_ref = self.get_reference_at_time(index)
-
-        pos_err = x_meas - x_ref
-        vel_err = self.xd - xd_ref
-
+        #pos, quat, self.x = self.get_current_pose()
+        x_ref, xd_ref = self.get_reference_at_time(index) 
+        
         if index == 0: 
+            _, _, self.x = self.get_current_pose()
             self.simulated_activation = 0
+        
+        if index == len(self.t) - 1:
+            pos_err = np.zeros(6) #at the end of the exercise, you're done moving against the virtual spring
+            vel_err = np.zeros(6)
+        else:
+            pos_err = self.x - x_ref
+            vel_err = self.xd - xd_ref
         
         self.K = self.set_K(self.simulated_activation, self.desired_activation, G)
 
-        external_force = self.force_on_patient(pos_err, self.K) # we are updating the external force applied to the simulation as well
-        self.simulated_activation = self.opensim_simulated_activation(index, external_force)[0]
+        self.external_force = self.force_on_patient(pos_err, self.K) # we are updating the external force applied to the simulation as well
+    
+        self.simulated_activation = self.opensim_simulated_activation(index, self.external_force)[0]
 
-        rhs = external_force - self.B @ vel_err - self.K @ pos_err
+        rhs = self.external_force - self.B @ vel_err - self.K @ pos_err
         self.xdd = np.linalg.solve(self.M, rhs)
 
         self.xd += self.xdd * self.dt

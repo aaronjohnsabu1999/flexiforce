@@ -112,7 +112,7 @@ class Bicep_Curl:
         
         #Set Robot Force during step_index
         self.ext_load["r_ulna_radius_hand_force_vx"][step_index] = force_vector[0]
-        self.ext_load["r_ulna_radius_hand_force_vy"][step_index] = force_vector[2] #for some reason, opensim flips y and z
+        self.ext_load["r_ulna_radius_hand_force_vy"][step_index] = force_vector[2] 
         self.ext_load["r_ulna_radius_hand_force_vz"][step_index] = force_vector[1]
 
         #Write dictionary into .sto files with the force/point of force application at this timestep

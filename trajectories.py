@@ -1,11 +1,13 @@
 import numpy as np
 
+#Not needed since we're getting trajectory directly from OpenSIM
 def quarter_circle_trajectory(t, center=[0.5, 0.0, 0.4], radius=0.2, frequency=0.1):
     theta = 1.5 * np.pi + 0.5 * np.pi * (frequency * t % 1.0)
     x = center[0] + radius * np.cos(theta)
     y = center[1]
     z = center[2] + radius * np.sin(theta)
     return [x, y, z, 0, 0, 0]
+
 
 def quarter_circle_velocity(t, center=[0.5, 0.0, 0.4], radius=0.2, frequency=0.1):
     omega = 0.5 * np.pi * frequency

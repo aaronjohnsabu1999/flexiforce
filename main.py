@@ -27,10 +27,9 @@ def plot_results(log):
 
     plt.subplot(3, 1, 2)
     plt.title('Force Applied on Patient')
-    plt.plot(log["time"], log["applied_force"][:, 0], label="Applied X Force")
-    plt.plot(log["time"], log["applied_force"][:, 1], label="Applied Y Force")
-    plt.plot(log["time"], log["applied_force"][:, 2], label="Applied Z Force")
-    #plt.yscale('log')
+    plt.plot(log["time"], log["applied_force"][:, 0], label="Applied X Force", color = 'r')
+    plt.plot(log["time"], log["applied_force"][:, 1], label="Applied Y Force", color = 'g')
+    plt.plot(log["time"], log["applied_force"][:, 2], label="Applied Z Force", color = 'b')
     plt.ylabel("Force (N)")
     plt.xlabel("Time (s)")
     plt.grid(True)
@@ -97,11 +96,10 @@ def run(G, sps = 100, curl_time = 10):
             log["vel"].append(data.qvel.copy())
             log["position"].append(controller.x[:3].copy())
 
-            _, _, pose_meas = controller.get_current_pose()
-            log["measured_position"].append(pose_meas[:3].copy())
+            log["measured_position"].append(controller.x)
             x_ref, _ = controller.get_reference_at_time(i)
             log["x_ref"].append(x_ref[:3].copy())
-            log["applied_force"].append(controller.force_on_patient(controller.x - x_ref, controller.K).copy())
+            log["applied_force"].append(controller.external_force)
             log["desired_activation"].append(controller.desired_activation)
             log["simulated_activation"].append(controller.simulated_activation)
 
@@ -115,6 +113,7 @@ def run(G, sps = 100, curl_time = 10):
     log["simulated_activation"] = np.array(log["simulated_activation"])[:-1]#we assume a start with zero activation and need to throw away the last simulated activation to get indices to match
 
     plot_results(log)
+
 
 if __name__ == "__main__":
     run()
