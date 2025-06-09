@@ -51,9 +51,7 @@ class Bicep_Curl:
         self.analyzer.setName("Bicep_Curl")
 
         #Initialize External Load
-        x = np.zeros(self.t.shape)
-        y = np.zeros(self.t.shape)
-        z = np.zeros(self.t.shape)
+        x, y, z = self.hand_traj()
         fx = np.zeros(self.t.shape)
         fy = np.zeros(self.t.shape)
         fz = np.zeros(self.t.shape)
@@ -66,6 +64,7 @@ class Bicep_Curl:
             "r_ulna_radius_hand_force_pz": z,
         }
         self.make_XML()
+        
         
 
     def step_simulation(self, step_index, force_vector):
@@ -86,30 +85,6 @@ class Bicep_Curl:
         self.analyzer.setFinalTime(t)
         self.analyzer.createExternalLoads
     
-        # Create State object from the shoulder and elbow coordinates at the step_index
-        data = osim.Vector.createFromMat(np.asarray([0.0, self.elbow_trajectory[step_index]]))
-        state = self.model.initSystem()
-        state.setQ(data)
-        self.model.assemble(state)
-
-        #Get Transformation Matrix between ground and r_ulna_radius_hand frames
-        for frame in self.model.getFrameList():
-            if frame.getName() != "r_ulna_radius_hand":
-                continue
-            T_GR = frame.getTransformInGround(state)
-
-        #Get contact point position in r_ulna_radius_hand frame
-        for ctc_geom in self.model.get_ContactGeometrySet():
-            if ctc_geom.getName() != "Robot_Contact":
-                continue
-            V_R = ctc_geom.getLocation()
-
-        #set position of contact geometry in ground frame during step_index
-        V_G = T_GR.shiftFrameStationToBase(V_R)
-        self.ext_load["r_ulna_radius_hand_force_px"][step_index] = V_G[0]
-        self.ext_load["r_ulna_radius_hand_force_py"][step_index] = V_G[1]
-        self.ext_load["r_ulna_radius_hand_force_pz"][step_index] = V_G[2]
-        
         #Set Robot Force during step_index
         self.ext_load["r_ulna_radius_hand_force_vx"][step_index] = force_vector[0]
         self.ext_load["r_ulna_radius_hand_force_vy"][step_index] = force_vector[2] 
@@ -153,6 +128,7 @@ class Bicep_Curl:
         return OSIMtable
     
 
+
     def make_XML(self):
         '''
         Helper function to make .xml to instruction the simulation on where it can find the external loads
@@ -179,7 +155,41 @@ class Bicep_Curl:
         load.cloneAndAppend(force)
         load.setDataFileName(self.force_path_sto)
         load.printToXML(self.force_path_xml)
+
+    
+
+    def hand_traj(self):
+        x = []
+        y = []
+        z = []
+        for i, t in enumerate(self.t):
+            # Create State object from the shoulder and elbow coordinates at the step_index
+            data = osim.Vector.createFromMat(np.asarray([0.0, self.elbow_trajectory[i]]))
+            state = self.model.initSystem()
+            state.setQ(data)
+            self.model.assemble(state)
+
+            #Get Transformation Matrix between ground and r_ulna_radius_hand frames
+            for frame in self.model.getFrameList():
+                if frame.getName() != "r_ulna_radius_hand":
+                    continue
+                T_GR = frame.getTransformInGround(state)
+
+            #Get contact point position in r_ulna_radius_hand frame
+            for ctc_geom in self.model.get_ContactGeometrySet():
+                if ctc_geom.getName() != "Robot_Contact":
+                    continue
+                V_R = ctc_geom.getLocation()
+
+            #set position of contact geometry in ground frame during step_index
+            V_G = T_GR.shiftFrameStationToBase(V_R)
+            x.append(V_G[0])
+            y.append(V_G[1])
+            z.append(V_G[2])
+
+        return x, y, z
       
+
 
     def _traj(self):
         '''

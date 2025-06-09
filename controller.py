@@ -65,11 +65,8 @@ class AdmittanceController:
         y = pos.getDependentColumn("r_ulna_radius_hand_force_py")
         z = pos.getDependentColumn("r_ulna_radius_hand_force_pz")
 
-        #at the end of the exercise, you're done moving against the virtual spring
-        if index == len(self.t) - 1:
-            x_ref = np.array([x[index], z[index], y[index], 0, 0, 0]) #z&y are flipped bcuz opensim flips them for some godforsaken reason
-        else:
-            x_ref = np.array([x[index+1], z[index+1], y[index+1], 0, 0, 0]) #z&y are flipped bcuz opensim flips them for some godforsaken reason
+        x_ref = np.array([x[index], z[index], y[index], 0, 0, 0]) #z&y are flipped bcuz opensim flips them for some godforsaken reason
+       
 
         xd_ref = np.array(self.vel_func(t))
         return x_ref, xd_ref
@@ -78,31 +75,31 @@ class AdmittanceController:
 
         mujoco.mj_forward(self.model, self.data)
 
-        #pos, quat, self.x = self.get_current_pose()
-        x_ref, xd_ref = self.get_reference_at_time(index) 
-        
         if index == 0: 
-            _, _, self.x = self.get_current_pose()
             self.simulated_activation = 0
         
         if index == len(self.t) - 1:
             pos_err = np.zeros(6) #at the end of the exercise, you're done moving against the virtual spring
             vel_err = np.zeros(6)
         else:
-            pos_err = self.x - x_ref
+            x_ref, xd_ref = self.get_reference_at_time(index + 1) #get reference pose from next time step
+            _, _, self.x = self.get_current_pose()
+            pos_err = self.x - x_ref #x_ref is the pose at the next time step
             vel_err = self.xd - xd_ref
         
+        #This calculates the K at the current time step from the activation at the current time step
         self.K = self.set_K(self.simulated_activation, self.desired_activation, G)
 
-        self.external_force = self.force_on_patient(pos_err, self.K) # we are updating the external force applied to the simulation as well
-    
+        #Based on the error between the current pose and the desired pose at the next time step and K at this time step, calculate the force on the patient at this time step
+        self.external_force = self.force_on_patient(pos_err, self.K) 
+
+        #Based on the force applied to the patient at this time step, what will the activation at this time step be?
         self.simulated_activation = self.opensim_simulated_activation(index, self.external_force)[0]
 
         rhs = self.external_force - self.B @ vel_err - self.K @ pos_err
         self.xdd = np.linalg.solve(self.M, rhs)
 
         self.xd += self.xdd * self.dt
-        self.x += self.xd * self.dt
 
         Jp = np.zeros((3, self.model.nv))
         Jr = np.zeros((3, self.model.nv))
