@@ -37,7 +37,7 @@ def plot_results(log):
 
     plt.subplot(3, 1, 3)
     plt.title('Activation')
-    plt.plot(log["time"], log["desired_activation"], label="Desired Activation")
+    plt.plot(log["time"], log["desired_activation"], label="Desired Activation", linestyle = '--', c = 'black')
     plt.plot(log["time"], log["simulated_activation"], label="Simulated Activation")
     plt.ylabel("Activation (A.U.)")
     plt.xlabel("Time (s)")
@@ -47,7 +47,7 @@ def plot_results(log):
     plt.tight_layout()
     plt.show()
 
-def run():
+def run(G, sps = 100, curl_time = 10):
     config = load_config()
     model_path = config["simulation"]["model_path"]
 
@@ -66,7 +66,9 @@ def run():
         K=np.diag(config["admittance_controller"]["K"]),
         Kp=config["admittance_controller"]["Kp"],
         Kd=config["admittance_controller"]["Kd"],
-        desired_activation=config["forces"]["desired_activation"]
+        desired_activation=config["forces"]["desired_activation"],
+        sps = sps,
+        curl_time = curl_time
     )
 
     data.qpos[:] = np.array(config["simulation"]["initial_qpos"])
@@ -76,18 +78,16 @@ def run():
     traj_func, vel_func = get_trajectory_functions(config)
     controller.set_trajectory(traj_func, vel_func)
 
-    dt = config["simulation"]["dt"]
-    duration = config["simulation"]["duration"]
     log = {"time": [], "vel": [], "position":[], "applied_force": [], "measured_position": [], "x_ref": [], "desired_activation":[], "simulated_activation":[]}
+    log["simulated_activation"].append(0.0) #Assume muscle starts inactive
 
     site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, config["simulation"]["site_name"])
     body_id = model.site_bodyid[site_id]
 
+    t_traj = controller._t()
     with mujoco.viewer.launch_passive(model, data) as viewer:
-        t0 = time.time()
-        while viewer.is_running() and time.time() - t0 < duration:
-            t = time.time() - t0
-            tau = controller.compute_torques(t, dt)
+        for i, t in enumerate(t_traj):
+            tau = controller.compute_torques(i, G)
             data.ctrl[:] = tau
             mujoco.mj_step(model, data)
             viewer.sync()
@@ -98,7 +98,7 @@ def run():
 
             _, _, pose_meas = controller.get_current_pose()
             log["measured_position"].append(pose_meas[:3].copy())
-            x_ref, _ = controller.get_reference_at_time(t)
+            x_ref, _ = controller.get_reference_at_time(i)
             log["x_ref"].append(x_ref[:3].copy())
             log["applied_force"].append(controller.force_on_patient(controller.x - x_ref, controller.K).copy())
             log["desired_activation"].append(controller.desired_activation)
@@ -111,7 +111,8 @@ def run():
     log["measured_position"] = np.array(log["measured_position"])
     log["x_ref"] = np.array(log["x_ref"])
     log["desired_activation"] = np.array(log["desired_activation"])
-    log["simulated_activation"] = np.array(log["simulated_activation"])
+    print(log["simulated_activation"])
+    log["simulated_activation"] = np.array(log["simulated_activation"])[:-1]#we assume a start with zero activation and need to throw away the last simulated activation to get indices to match
 
     plot_results(log)
 

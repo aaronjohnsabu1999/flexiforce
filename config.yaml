@@ -14,7 +14,7 @@ admittance_controller:
 
 forces:
   external_force: [1, 0, 1, 0, 0, 0]
-  desired_activation: 1.0 # the desired activation is what we want in our MUSCLES - and is achieved by some displacement of the EE which has a virtual stiffness 
+  desired_activation: 0.8 # the desired activation is what we want in our MUSCLES - and is achieved by some displacement of the EE which has a virtual stiffness 
   # we can achieve a desired activation by representing it as an external force - the force on the robot arm and the human arm are the same - but opposite directions
 
 trajectory:
