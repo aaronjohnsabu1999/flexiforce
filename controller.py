@@ -123,10 +123,81 @@ class AdmittanceController:
         qvel_des = np.linalg.pinv(J) @ self.xd
         qvel_error = qvel_des - self.data.qvel
         
-        tau = self.Kp *qvel_error + self.Kd * self.data.qvel
+        qpos_ik, success = self.inverse_kinematics(
+            self.model, self.data,
+            site_name=self.site_name,
+            target_pos=x_des[:3],       
+            target_quat=[0,1,0,0], # contstraining the orientation to be 
+            tol=1e-4
+        )
+
+        q_err = qpos_ik - self.data.qpos
+
+        tau = self.Kp * q_err + self.Kd * qvel_error
      
 
         return tau
     
     def _t(self):
         return self.t
+    
+    # This is the Inverse Kinematics method from Google Deepmind for calculating IK on MuJoCo models
+    def nullspace_method(self, jac_joints, delta, regularization_strength=0.0):
+        hess_approx = jac_joints.T @ jac_joints
+        joint_delta = jac_joints.T @ delta
+        if regularization_strength > 0:
+            hess_approx += np.eye(hess_approx.shape[0]) * regularization_strength
+            return np.linalg.solve(hess_approx, joint_delta)
+        else:
+            return np.linalg.lstsq(hess_approx, joint_delta, rcond=-1)[0]
+
+        
+    def inverse_kinematics(self, model, data, site_name, target_pos=None, target_quat=None,
+                       tol=1e-5, rot_weight=1.0, max_steps=100, max_update_norm=0.5,
+                       reg_threshold=0.1, reg_strength=3e-1, joint_names=None):
+        if target_pos is None and target_quat is None:
+            raise ValueError("Must provide at least target_pos or target_quat.")
+
+        site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, site_name)
+        update_nv = np.zeros(model.nv)
+        jac = np.zeros((6, model.nv))
+        err = np.zeros(6)
+
+        for step in range(max_steps):
+            mujoco.mj_fwdPosition(model, data)
+            site_pos = data.site_xpos[site_id]
+            site_mat = data.site_xmat[site_id].reshape(3, 3)
+
+            err[:3] = target_pos[:3] - site_pos if target_pos is not None else 0
+            err_norm = np.linalg.norm(err[:3])
+
+            if target_quat is not None:
+                from scipy.spatial.transform import Rotation as R
+                current_quat = R.from_matrix(site_mat).as_quat()
+                desired_quat = R.from_quat(target_quat)
+                delta_rot = desired_quat * R.from_quat(current_quat).inv()
+                err[3:] = delta_rot.as_rotvec()
+                err_norm += np.linalg.norm(err[3:]) * rot_weight
+
+            if err_norm < tol:
+                return data.qpos.copy(), True
+
+            Jp = np.zeros((3, model.nv))
+            Jr = np.zeros((3, model.nv))
+            mujoco.mj_jacSite(model, data, Jp, Jr, site_id)
+            jac[:3] = Jp
+            jac[3:] = Jr if target_quat is not None else 0
+
+            jac_joints = jac
+            if joint_names is not None:
+                raise NotImplementedError("Joint selection not implemented yet.")
+
+            reg = reg_strength if err_norm > reg_threshold else 0.0
+            dq = self.nullspace_method(jac_joints, err, regularization_strength=reg)
+            dq_norm = np.linalg.norm(dq)
+            if dq_norm > max_update_norm:
+                dq *= max_update_norm / dq_norm
+
+            mujoco.mj_integratePos(model, data.qpos, dq, 1)
+
+        return data.qpos.copy(), False
