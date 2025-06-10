@@ -188,7 +188,25 @@ class Bicep_Curl:
             z.append(V_G[2])
 
         return x, y, z
-      
+    
+
+
+    def hand_norm(self, index):
+        # Create State object from the shoulder and elbow coordinates at the step_index
+        data = osim.Vector.createFromMat(np.asarray([0.0, self.elbow_trajectory[index]]))
+        state = self.model.initSystem()
+        state.setQ(data)
+        self.model.assemble(state)
+
+        #Get Transformation Matrix between ground and r_ulna_radius_hand frames
+        for frame in self.model.getFrameList():
+            if frame.getName() != "r_ulna_radius_hand":
+                continue
+            T_GR = frame.getTransformInGround(state)
+
+        norm = T_GR.shiftFrameStationToBase(osim.Vec3(1e25,0,0)) #the y-direction of the r_ulna_radius_hand frame is always normal to the palm
+        return norm
+
 
 
     def _traj(self):

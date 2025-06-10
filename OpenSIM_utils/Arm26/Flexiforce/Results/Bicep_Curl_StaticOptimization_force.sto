@@ -13,4 +13,4 @@ If the header above contains a line with 'inDegrees', this indicates whether rot
 
 endheader
 time	TRIlong	TRIlat	TRImed	BIClong	BICshort	BRA	r_ulna_radius_hand_externalforce_Fx	r_ulna_radius_hand_externalforce_Fy	r_ulna_radius_hand_externalforce_Fz	r_ulna_radius_hand_externalforce_px	r_ulna_radius_hand_externalforce_py	r_ulna_radius_hand_externalforce_pz
-      1.00000000	      5.84373009	     51.62584940	     52.11490671	    100.67376162	      3.61693426	      7.03970192	      0.00000000	      0.00000000	      0.00000000	      0.01164885	     -0.28063458	      0.06884074
+      1.00000000	      5.84360694	     51.66724779	     52.15670068	    100.65089705	      3.61259255	      7.03981252	      0.00000000	     -0.00000000	     -0.00000000	      0.01164885	     -0.28063458	      0.06884074
