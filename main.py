@@ -47,7 +47,7 @@ def plot_results(log):
     plt.tight_layout()
     plt.show()
 
-def run(G1, G2, G3, sps = 100, curl_time = 10):
+def run(G, sps = 100, curl_time = 10):
     config = load_config()
     model_path = config["simulation"]["model_path"]
 
@@ -86,7 +86,7 @@ def run(G1, G2, G3, sps = 100, curl_time = 10):
     t_traj = controller._t()
     with mujoco.viewer.launch_passive(model, data) as viewer:
         for i, t in enumerate(t_traj):
-            tau = controller.compute_torques(i, G1, G2, G3)
+            tau = controller.compute_torques(i, G)
             data.ctrl[:] = tau
             mujoco.mj_step(model, data)
             viewer.sync()

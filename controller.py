@@ -42,20 +42,14 @@ class AdmittanceController:
         Force Provided in Mujoco coordinate system (Z is up)
         '''
         #because of the way we're setting K, need to make pos_err be a scalar, not a vector
-        #pos_mag = np.sqrt(pos_err[0]**2 + pos_err[1]**2 + pos_err[2]**2)
-        F = -pos_err * K  #F = -kx
+        pos_mag = np.sqrt(pos_err[0]**2 + pos_err[1]**2 + pos_err[2]**2)
+        F = -pos_mag * K  #F = -kx
         return F
     
-    def set_K(self, simulated_activation, desired_activation, index, G1, G2, G3):
+    def set_K(self, simulated_activation, desired_activation, index, G):
         '''
         Set anisotropic stiffness in the Mujoco coordinate system (Z is up)
         '''
-        if index/len(self.t) < 0.4:
-            G = G1
-        elif index/len(self.t) > 0.7:
-            G = G3
-        else:
-            G = G2
 
         self.activation_err.append(desired_activation - simulated_activation) # this is an arbitrary control law for changing K
         PID = G["G_p"]*self.activation_err[-1] + G["G_d"]*(self.activation_err[-2] - self.activation_err[-1])/self.dt + G["G_i"]*sum(self.activation_err)
@@ -64,7 +58,7 @@ class AdmittanceController:
         normalizer = (norm[0]**2 + norm[1]**2 + norm[2]**2)**0.5
         K_norm = np.asarray([norm[0], norm[2], norm[1], 0, 0, 0])/normalizer
        
-        return np.asarray([1,1,1,0,0,0])*PID
+        return K_norm*PID
     
     def opensim_simulated_activation(self, index, F): 
         '''
@@ -92,7 +86,7 @@ class AdmittanceController:
 
         return x_ref, xd_ref
 
-    def compute_torques(self, index, G1, G2, G3):
+    def compute_torques(self, index, G):
 
         mujoco.mj_forward(self.model, self.data)
 
@@ -100,16 +94,16 @@ class AdmittanceController:
             self.simulated_activation = 0
         
         if index == len(self.t) - 1:
-            pos_err = np.zeros(6) #at the end of the exercise, you're done moving against the virtual spring
-            vel_err = np.zeros(6)
+            x_des, xd_ref = self.get_reference_at_time(index)
         else:
-            self.x, xd_ref = self.get_reference_at_time(index)
-            x_des, _ = self.get_reference_at_time(index + 1) #get reference pose from next time step   
-            pos_err = x_des - self.x #x_ref is the pose at the next time step
-            vel_err = self.xd - xd_ref
+            x_des, xd_ref = self.get_reference_at_time(index + 1) #get reference pose from next time step   
+
+        _, _, self.x = self.get_current_pose()
+        pos_err = x_des - self.x #x_ref is the pose at the next time step
+        vel_err = self.xd - xd_ref
         
         #This calculates the K at the current time step from the activation at the current time step
-        self.K = self.set_K(self.simulated_activation, self.desired_activation, index, G1, G2, G3)
+        self.K = self.set_K(self.simulated_activation, self.desired_activation, index, G)
         
         #Based on the error between the current pose and the desired pose at the next time step and K at this time step, calculate the force on the patient at this time step
         self.external_force = self.force_on_patient(pos_err, self.K) 
