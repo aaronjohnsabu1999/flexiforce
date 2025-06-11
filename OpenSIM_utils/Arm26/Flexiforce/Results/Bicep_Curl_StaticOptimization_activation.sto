@@ -7,4 +7,4 @@ This file contains static optimization results.
 
 endheader
 time	TRIlong	TRIlat	TRImed	BIClong	BICshort	BRA
-      1.00000000	      0.01000356	      0.01002135	      0.01002122	      0.73824887	      0.26524802	      0.29299564
+      1.00000000	      0.01000361	      0.01013245	      0.01013011	      0.68387851	      0.23716015	      0.24987465

@@ -22,6 +22,7 @@ def plot_results(log):
         plt.plot(log["time"], log["x_ref"][:, i], linestyle='--', color=color, label=f"{label} Reference")
         plt.plot(log["time"], log["measured_position"][:, i], color=color, label=f"{label} Measured")
     plt.ylabel("Position (m)")
+    plt.xlabel("Time (s)")
     plt.legend()
     plt.grid(True)
 
@@ -47,7 +48,7 @@ def plot_results(log):
     plt.tight_layout()
     plt.show()
 
-def run(G, sps = 100, curl_time = 10):
+def run(G = {'G_p': 100,'G_i': 200, 'G_d': 0.1}, sps = 500, curl_time = 1):
     config = load_config()
     model_path = config["simulation"]["model_path"]
 
@@ -110,9 +111,5 @@ def run(G, sps = 100, curl_time = 10):
     log["x_ref"] = np.array(log["x_ref"])
     log["desired_activation"] = np.array(log["desired_activation"])
     log["simulated_activation"] = np.array(log["simulated_activation"]) #we assume a start with zero activation and need to throw away the last simulated activation to get indices to match
-
+   
     plot_results(log)
-
-
-if __name__ == "__main__":
-    run()

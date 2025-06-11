@@ -81,7 +81,7 @@ class AdmittanceController:
         y = pos.getDependentColumn("r_ulna_radius_hand_force_py")
         z = pos.getDependentColumn("r_ulna_radius_hand_force_pz")
 
-        x_ref = np.array([x[index], z[index], y[index], 0, 0, 0]) #z&y are flipped bcuz opensim flips them for some godforsaken reason
+        x_ref = np.array([x[index] + 0.2, z[index] +0.1, y[index] - 0.2, 0, 0, 0]) #z&y are flipped bcuz opensim flips them for some godforsaken reason
         xd_ref = np.array(self.vel_func(t))
 
         return x_ref, xd_ref
@@ -128,7 +128,7 @@ class AdmittanceController:
             self.model, self.data,
             site_name=self.site_name,
             target_pos=x_des[:3],       
-            target_quat=[0,1,0,0], # contstraining the orientation to be 
+            target_quat=[0,0,1,0], # contstraining the orientation to be 
             tol=1e-4
         )
 
@@ -141,7 +141,7 @@ class AdmittanceController:
     def _t(self):
         return self.t
     
-    # This is the Inverse Kinematics method from Google Deepmind for calculating IK on MuJoCo models
+    # This is the Inverse Kinematics method from Google Deepmind for calculating IK on MuJoCo models: https://github.com/google-deepmind/dm_control/blob/main/dm_control/utils/inverse_kinematics.py
     def nullspace_method(self, jac_joints, delta, regularization_strength=0.0):
         hess_approx = jac_joints.T @ jac_joints
         joint_delta = jac_joints.T @ delta
@@ -153,8 +153,8 @@ class AdmittanceController:
 
         
     def inverse_kinematics(self, model, data, site_name, target_pos=None, target_quat=None,
-                       tol=1e-5, rot_weight=1.0, max_steps=100, max_update_norm=0.5,
-                       reg_threshold=0.1, reg_strength=3e-1, joint_names=None):
+                       tol=1e-5, rot_weight=10.0, max_steps=100, max_update_norm=5.0,
+                       reg_threshold=0.1, reg_strength=3e-2, joint_names=None):
         if target_pos is None and target_quat is None:
             raise ValueError("Must provide at least target_pos or target_quat.")
 
@@ -199,5 +199,13 @@ class AdmittanceController:
                 dq *= max_update_norm / dq_norm
 
             mujoco.mj_integratePos(model, data.qpos, dq, 1)
+
+            # Clamp to joint limits
+            for i in range(model.nq):
+                if model.jnt_limited[i]:
+                    joint_id = model.jnt_qposadr[i]
+                    qmin = model.jnt_range[i][0]
+                    qmax = model.jnt_range[i][1]
+                    data.qpos[joint_id] = np.clip(data.qpos[joint_id], qmin, qmax)
 
         return data.qpos.copy(), False
