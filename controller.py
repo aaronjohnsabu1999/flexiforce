@@ -41,23 +41,30 @@ class AdmittanceController:
         '''
         Force Provided in Mujoco coordinate system (Z is up)
         '''
-        F = -np.abs(pos_err) * K  #F = -kx
+        #because of the way we're setting K, need to make pos_err be a scalar, not a vector
+        #pos_mag = np.sqrt(pos_err[0]**2 + pos_err[1]**2 + pos_err[2]**2)
+        F = -pos_err * K  #F = -kx
         return F
     
-    def set_K(self, simulated_activation, desired_activation, index, G):
+    def set_K(self, simulated_activation, desired_activation, index, G1, G2, G3):
         '''
         Set anisotropic stiffness in the Mujoco coordinate system (Z is up)
         '''
+        if index/len(self.t) < 0.4:
+            G = G1
+        elif index/len(self.t) > 0.7:
+            G = G3
+        else:
+            G = G2
+
         self.activation_err.append(desired_activation - simulated_activation) # this is an arbitrary control law for changing K
-        scale = (1 + G["G_p"]*self.activation_err[-1] + G["G_d"]*(self.activation_err[-1] - self.activation_err[-2])/self.dt + G["G_i"]*sum(self.activation_err))
-        scale = np.max([scale, 0])
-        
+        PID = G["G_p"]*self.activation_err[-1] + G["G_d"]*(self.activation_err[-2] - self.activation_err[-1])/self.dt + G["G_i"]*sum(self.activation_err)
+
         norm = self.bicep.hand_norm(index)
         normalizer = (norm[0]**2 + norm[1]**2 + norm[2]**2)**0.5
-
         K_norm = np.asarray([norm[0], norm[2], norm[1], 0, 0, 0])/normalizer
        
-        return K_norm*scale
+        return np.asarray([1,1,1,0,0,0])*PID
     
     def opensim_simulated_activation(self, index, F): 
         '''
@@ -85,7 +92,7 @@ class AdmittanceController:
 
         return x_ref, xd_ref
 
-    def compute_torques(self, index, G):
+    def compute_torques(self, index, G1, G2, G3):
 
         mujoco.mj_forward(self.model, self.data)
 
@@ -102,7 +109,7 @@ class AdmittanceController:
             vel_err = self.xd - xd_ref
         
         #This calculates the K at the current time step from the activation at the current time step
-        self.K = self.set_K(self.simulated_activation, self.desired_activation, index, G)
+        self.K = self.set_K(self.simulated_activation, self.desired_activation, index, G1, G2, G3)
         
         #Based on the error between the current pose and the desired pose at the next time step and K at this time step, calculate the force on the patient at this time step
         self.external_force = self.force_on_patient(pos_err, self.K) 
@@ -135,7 +142,6 @@ class AdmittanceController:
 
         tau = self.Kp * q_err + self.Kd * qvel_error
      
-
         return tau
     
     def _t(self):

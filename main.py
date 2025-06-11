@@ -47,7 +47,7 @@ def plot_results(log):
     plt.tight_layout()
     plt.show()
 
-def run(G, sps = 100, curl_time = 10):
+def run(G1, G2, G3, sps = 100, curl_time = 10):
     config = load_config()
     model_path = config["simulation"]["model_path"]
 
@@ -79,7 +79,6 @@ def run(G, sps = 100, curl_time = 10):
     controller.set_trajectory(traj_func, vel_func)
 
     log = {"time": [], "vel": [], "position":[], "applied_force": [], "measured_position": [], "x_ref": [], "desired_activation":[], "simulated_activation":[]}
-    log["simulated_activation"].append(0.0) #Assume muscle starts inactive
 
     site_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, config["simulation"]["site_name"])
     body_id = model.site_bodyid[site_id]
@@ -87,7 +86,7 @@ def run(G, sps = 100, curl_time = 10):
     t_traj = controller._t()
     with mujoco.viewer.launch_passive(model, data) as viewer:
         for i, t in enumerate(t_traj):
-            tau = controller.compute_torques(i, G)
+            tau = controller.compute_torques(i, G1, G2, G3)
             data.ctrl[:] = tau
             mujoco.mj_step(model, data)
             viewer.sync()
@@ -110,7 +109,7 @@ def run(G, sps = 100, curl_time = 10):
     log["measured_position"] = np.array(log["measured_position"])
     log["x_ref"] = np.array(log["x_ref"])
     log["desired_activation"] = np.array(log["desired_activation"])
-    log["simulated_activation"] = np.array(log["simulated_activation"])[:-1]#we assume a start with zero activation and need to throw away the last simulated activation to get indices to match
+    log["simulated_activation"] = np.array(log["simulated_activation"]) #we assume a start with zero activation and need to throw away the last simulated activation to get indices to match
 
     plot_results(log)
 
