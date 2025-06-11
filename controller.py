@@ -1,6 +1,6 @@
 import numpy as np
 import mujoco
-from Bicep import Bicep_Curl
+from bicep_temp import Bicep_Curl
 from scipy.spatial.transform import Rotation as R
 import opensim as osim
 

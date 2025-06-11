@@ -1,7 +1,7 @@
 # FlexiForce: EMG-Driven Robotic Resistance Training Simulator
 
 <p align="center">
-  <img src="flexiforce-logo.png" alt="FlexiForce Logo" width="300"/>
+  <img src="assets/flexiforce-logo.png" alt="FlexiForce Logo" width="300"/>
 </p>
 
 <p align="center">
