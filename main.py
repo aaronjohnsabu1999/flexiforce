@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 from controller import AdmittanceController
 from trajectories import get_trajectory_functions
 
-def load_config():
-    with open("config.yaml", "r") as f:
+def load_config(fname):
+    with open(fname, "r") as f:
         return yaml.safe_load(f)
 
 def plot_results(log):
@@ -48,8 +48,8 @@ def plot_results(log):
     plt.tight_layout()
     plt.show()
 
-def run(G = {'G_p': 100,'G_i': 200, 'G_d': 0.1}, sps = 500, curl_time = 1):
-    config = load_config()
+def run(G = {'G_p': 100,'G_i': 200, 'G_d': 0.1}, sps = 500, curl_time = 1, plot = True, yaml = 'config.yaml'):
+    config = load_config(yaml)
     model_path = config["simulation"]["model_path"]
 
     if not os.path.exists(model_path):
@@ -112,4 +112,7 @@ def run(G = {'G_p': 100,'G_i': 200, 'G_d': 0.1}, sps = 500, curl_time = 1):
     log["desired_activation"] = np.array(log["desired_activation"])
     log["simulated_activation"] = np.array(log["simulated_activation"]) #we assume a start with zero activation and need to throw away the last simulated activation to get indices to match
    
-    plot_results(log)
+    if plot:
+        plot_results(log)
+
+    return log

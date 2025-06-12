@@ -102,7 +102,7 @@ class AdmittanceController:
         pos_err = x_des - self.x #x_ref is the pose at the next time step
         vel_err = self.xd - xd_ref
         
-        #This calculates the K at the current time step from the activation at the current time step
+        #This calculates the K at the current time step from the activation at the previous time step
         self.K = self.set_K(self.simulated_activation, self.desired_activation, index, G)
         
         #Based on the error between the current pose and the desired pose at the next time step and K at this time step, calculate the force on the patient at this time step
